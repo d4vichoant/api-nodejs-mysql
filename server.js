@@ -27,7 +27,7 @@ app.use(myconn(mysql,dbOptions, 'single'))
 app.use(express.json())
 app.use(cors());
 
-
+app.use('/media', express.static('media'));
 //routes -------------------
 app.get('/',(req,res)=>{
     res.send('Welcome to my API')

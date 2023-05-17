@@ -1,6 +1,9 @@
-const express = require('express')
-const routes = express.Router()
-const bcrypt = require('bcrypt');
+const express = require('express');
+const routes = express.Router();
+const fileUpload = require('express-fileupload');
+
+// Middlewares
+routes.use(fileUpload());
 
 routes.get('/',(req,res)=>{
     req.getConnection((err,conn)=>{
@@ -41,77 +44,216 @@ routes.get('/objetivospersonales',(req,res)=>{
       })
   })
 })
+routes.post('/guardarDatos', (req, res) => {
 
-routes.post('/', (req, res) => {
-  const profileData = {
-    IDGENERO: req.body.gender,
-    IDROLUSUARIO: req.body.rolusuario,
-    NOMBREPERSONA: req.body.first_name,
-    APELLDOPERSONA: req.body.last_name,
-    CORREOPERSONA: req.body.mail_profile,
-    NICKNAMEPERSONA: req.body.nickname,
-    FECHANACIMIENTOPERSONA: req.body.birthday,
-    CONTRASENIAPERSONA: req.body.password,
-    ESTADOPERSONA: req.body.status,
-    USUARIOMODIFICACIONPERSONA: req.body.nickname
-  };
-
+  // Iniciar la transacción
   req.getConnection((err, conn) => {
-    if (err) return res.send(err);
-    conn.query('INSERT INTO persona SET ?', profileData, (err, rows) => {
-      if (err) return res.json({message:err });;
+    if (err) {
+      return res.send(err);
+    }
 
-      const idPersonl = rows.insertId;
+    conn.beginTransaction((err) => {
+      if (err) {
+        return res.send(err);
+      }
 
-      const usersData = {
-        IDPERSONA: idPersonl,
-        IDFRECUENCIA: req.body.frecuency,
-        IDPROFESION: req.body.profession,
-        PESOUSUARIO: req.body.peso,
-        ALTURAUSUARIO: req.body.altura,
-        NOTIFICACIONUSUARIO: req.body.notification       
+      // Guardar en la tabla "persona"
+      const persona = {
+        IDGENERO: req.body.gender,
+        IDROLUSUARIO: req.body.rolusuario,
+        NOMBREPERSONA: req.body.first_name,
+        APELLDOPERSONA: req.body.last_name,
+        CORREOPERSONA: req.body.mail_profile,
+        NICKNAMEPERSONA: req.body.nickname,
+        FECHANACIMIENTOPERSONA: req.body.birthday,
+        CONTRASENIAPERSONA: req.body.password,
+        ESTADOPERSONA: req.body.status,
+        USUARIOCREACIONPERSONA: req.body.nickname
       };
 
-      conn.query('INSERT INTO usuario SET ?', usersData, (err, rows) => {
-        if (err) return res.json({message:err });
-        const idUser = rows.insertId;
-        const objetiveString = req.body.objetive;
-        const objetiveArray = objetiveString.split(",").map(Number);
-        for (let i = 0; i < objetiveArray.length; i++) {
-          const objetivospersonalesuser = {
-            IDUSUARIO: idUser,
-            IDOBJETIVOSPERSONALES: objetiveArray[i]
-          };
-            conn.query('INSERT INTO objetivospersonalesusuario SET ?', objetivospersonalesuser, (err, rows) => {
-            if (err) return res.json({ message: err });
+      conn.query('INSERT INTO persona SET ?', persona, (err, result) => {
+        if (err) {
+          conn.rollback(() => {
+            throw err;
           });
         }
-        res.json({ message: 'Usuario Creado Correctamente !'});
+
+        const personaId = result.insertId;
+
+        // Guardar en la tabla "usuario"
+        const usuario = {
+          IDPERSONA: personaId,
+          IDFRECUENCIA: req.body.frecuency,
+          IDPROFESION: req.body.profession,
+          PESOUSUARIO: req.body.peso,
+          ALTURAUSUARIO: req.body.altura,
+          NOTIFICACIONUSUARIO: req.body.notification    
+        };
+
+        conn.query('INSERT INTO usuario SET ?', usuario, (err, result) => {
+          if (err) {
+            conn.rollback(() => {
+              throw err;
+            });
+          }
+
+          const usuarioId = result.insertId;
+
+          // Guardar en la tabla "objetivospersonalesusuario"
+          const objetivosInserts = req.body.objetive.split(',').map(item => {
+            return [usuarioId, parseInt(item.trim())];
+          });
+ 
+          conn.query('INSERT INTO objetivospersonalesusuario (IDUSUARIO, IDOBJETIVOSPERSONALES) VALUES ?', [objetivosInserts], (err, result) => {
+            if (err) {
+              conn.rollback(() => {
+                throw err;
+              });
+            }
+
+            // Confirmar la transacción
+            conn.commit((err) => {
+              if (err) {
+                conn.rollback(() => {
+                  throw err;
+                });
+              }
+              res.json({ message: 'Usuario Creado Correctamente !'});
+            });
+          });
+
+        });
+      });
+    });
+  });
+}); 
+
+
+routes.post('/guardarDatosEntrenador', (req, res) => {
+  const datos = req.body;
+
+  // Iniciar la transacción
+  req.getConnection((err, conn) => {
+    if (err) {
+      return res.send(err);
+    }
+
+    conn.beginTransaction((err) => {
+      if (err) {
+        return res.send(err);
+      }
+
+      // Guardar en la tabla "persona"
+      const persona = {
+        IDGENERO: req.body.gender,
+        IDROLUSUARIO: req.body.rolusuario,
+        NOMBREPERSONA: req.body.first_name,
+        APELLDOPERSONA: req.body.last_name,
+        CORREOPERSONA: req.body.mail_profile,
+        NICKNAMEPERSONA: req.body.nickname,
+        FECHANACIMIENTOPERSONA: req.body.birthday,
+        CONTRASENIAPERSONA: req.body.password,
+        ESTADOPERSONA: req.body.status,
+        USUARIOCREACIONPERSONA: req.body.nickname
+      };
+
+      conn.query('INSERT INTO persona SET ?', persona, (err, result) => {
+        if (err) {
+          conn.rollback(() => {
+            throw err;
+          });
+        }
+
+        const personaId = result.insertId;
+
+        // Guardar en la tabla "usuario"
+        const entrenador = {
+          IDPERSONA: personaId,
+          EXPERIENCIAENTRENADOR: req.body.experiencia,
+          DESCRIPCIONENTRENADOR: req.body.about,
+          TARIFASENTRENADOR: req.body.tarifa,
+          ACTIVACIONENTRENADOR: req.body.activacion,
+          CERTIFICACIONESENTRENADOR: JSON.stringify(req.body.certificacion)  
+        };
+
+        conn.query('INSERT INTO entrenador SET ?', entrenador, (err, result) => {
+          if (err) {
+            conn.rollback(() => {
+              throw err;
+            });
+          }
+
+          const usuarioId = result.insertId;
+
+          // Guardar en la tabla "objetivospersonalesusuario"
+
+          const idespecialidadentrenadorArray = req.body.specialty.map(item => {
+            return [usuarioId,parseInt(item.idespecialidadentrenador)];
+            });
+
+
+          conn.query('INSERT INTO  especialidadentrenadorentrenador (	IDENTRENADOR, idespecialidadentrenador) VALUES ?', [idespecialidadentrenadorArray], (err, result) => {
+            if (err) {
+              conn.rollback(() => {
+                throw err;
+              });
+            }
+
+            // Confirmar la transacción
+            conn.commit((err) => {
+              if (err) {
+                conn.rollback(() => {
+                  throw err;
+                });
+              } 
+              res.json({ message: 'Entrenador Creado Correctamente !'});
+            });
+          });
+        });
       });
     });
   });
 });
 
-
 routes.post('/login', (req, res) => {
   const { nickname, password } = req.body;
   req.getConnection((err, conn) => {
     if (err) return res.send(err);
-    conn.query('SELECT * FROM persona WHERE NICKNAMEPERSONA = ?', [nickname], (err, rows) => {
+    conn.query('SELECT * FROM persona WHERE NICKNAMEPERSONA = ? AND ESTADOPERSONA = true LIMIT 1;', [nickname], (err, rows) => {
       if (err) return res.send(err);
       if (rows.length > 0) {
         const storedPassword = rows[0].CONTRASENIAPERSONA;
+        const rolUsuario = rows[0].IDROLUSUARIO ;
         if (password === storedPassword) {
-          res.json({ message: 'Inicio de sesión exitoso' });
+          if (rolUsuario === 2) {
+            const query = 'SELECT * FROM entrenador en, persona per WHERE en.IDPERSONA = per.IDPERSONA AND en.ACTIVACIONENTRENADOR = true AND per.NICKNAMEPERSONA = ? LIMIT 1;';
+            conn.query(query, [nickname], (err, entrenadorRows) => {
+              if (err) return res.send(err);
+              if (entrenadorRows.length > 0) {
+                res.json({ message: 'access trainer' });
+               }else{
+                res.json({ message: 'trainer not activated' });
+               }
+            });
+          } else  {
+            if(rolUsuario === 99){
+              res.json({ message: 'all access' });
+            }else{
+              res.json({ message: 'access user' });
+            }
+            // Realizar acciones para otros roles
+            
+          }
         } else {
-          res.status(401).json({ message: 'Credenciales inválidas' });
+          res.status(401).json({ message: 'Credenciales Invalidas' });
         }
       } else {
-        res.status(401).json({ message: 'Credenciales inválidas' });
+        res.status(401).json({ message: 'Invalido Usuario y/o contraseña' });
       }
     });
   });
 });
+
 
   
 routes.get('/check-nickname/:nickname', (req, res) => {
@@ -159,5 +301,23 @@ routes.put('/:id',(req,res)=>{
         }) 
     })
 })
+
+routes.post('/subir-archivo', (req, res) => {
+  if (!req.files || Object.keys(req.files).length === 0) {
+    return res.status(400).json({ error: 'No se ha seleccionado ningún archivo' });
+  }
+
+  const file = req.files.file;
+
+  // Mueve el archivo al directorio deseado
+  const filePath = './documentos/entrenadores/' + file.name+'.pdf';
+  file.mv(filePath, error => {
+    if (error) {
+      return res.status(500).json({ error: 'Error al subir el archivo' });
+    }
+
+    res.json({ message: 'Archivo subido correctamente', filePath });
+  });
+});
 
 module.exports = routes

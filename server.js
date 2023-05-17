@@ -11,8 +11,8 @@ const dbOptions ={
     host: 'localhost',
     port: 3306,
     user: 'root',
-    password: '',
-    database: 'HomeFitGo'
+    password: 'root',
+    database: 'homefitgo'
 }
 
 // Agregar middleware para permitir CORS

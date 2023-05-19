@@ -1,17 +1,22 @@
+const jwt = require('jsonwebtoken');
+require('dotenv').config(); 
 const express = require('express')
 const mysql = require('mysql')
 const myconn = require('express-myconnection')
-const routes = require('./profiles')
+const routesprofile = require('./profiles')
+const routesmanager =require('./manager')
 
 const app = express()
 const cors = require('cors');
 
+const secretKey = process.env.SECRET_KEY;
+
 app.set('port', process.env.PORT || 9600)
 const dbOptions ={
-    host: 'localhost',
-    port: 3306,
-    user: 'root',
-    password: 'root',
+    host: 'mysql-127162-0.cloudclusters.net',
+    port: 10067,
+    user: 'admin',
+    password: 'xWhShC14',
     database: 'homefitgo'
 }
 
@@ -33,7 +38,21 @@ app.get('/',(req,res)=>{
     res.send('Welcome to my API')
 })
 
-app.use('/profiles',routes)
+app.get('/protectedtoken', (req, res) => {
+    const token = req.headers.authorization.split(' ')[1];
+    jwt.verify(token, secretKey, (err, decoded) => {
+      if (err) {
+        return res.status(401).json({ message: false });
+      } else {
+        res.json({ message: true });
+      }
+    });
+  });
+  
+
+  
+app.use('/profiles',routesprofile)
+app.use('/manager',routesmanager)
 
 //server running -----------------
 app.listen(app.get('port'),()=>{

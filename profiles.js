@@ -1,8 +1,12 @@
+require('dotenv').config(); 
 const express = require('express');
 const routes = express.Router();
 const fileUpload = require('express-fileupload');
-
+const jwt = require('jsonwebtoken');
+const secretKey = process.env.SECRET_KEY;
+const cors = require('cors');
 // Middlewares
+routes.use(cors());
 routes.use(fileUpload());
 
 routes.get('/',(req,res)=>{
@@ -229,20 +233,20 @@ routes.post('/login', (req, res) => {
             const query = 'SELECT * FROM entrenador en, persona per WHERE en.IDPERSONA = per.IDPERSONA AND en.ACTIVACIONENTRENADOR = true AND per.NICKNAMEPERSONA = ? LIMIT 1;';
             conn.query(query, [nickname], (err, entrenadorRows) => {
               if (err) return res.send(err);
+              const token = jwt.sign({ nickname }, secretKey);
               if (entrenadorRows.length > 0) {
-                res.json({ message: 'access trainer' });
+                res.json({ message: 'access trainer',token ,nickname});
                }else{
-                res.json({ message: 'trainer not activated' });
+                res.json({ message: 'trainer not activated',token ,nickname });
                }
             });
           } else  {
+            const token = jwt.sign({ nickname }, secretKey);
             if(rolUsuario === 99){
-              res.json({ message: 'all access' });
+              res.json({ message: 'all access',token ,nickname });
             }else{
-              res.json({ message: 'access user' });
+              res.json({ message: 'access user',token ,nickname });
             }
-            // Realizar acciones para otros roles
-            
           }
         } else {
           res.status(401).json({ message: 'Credenciales Invalidas' });
@@ -260,7 +264,7 @@ routes.get('/check-nickname/:nickname', (req, res) => {
     const nickname = req.params.nickname;
     req.getConnection((err, conn) => {
       if (err) return res.send(err);
-      conn.query('SELECT COUNT(*) AS count FROM persona WHERE NICKNAMEPERSONA = ?', [nickname], (err, rows) => {
+      conn.query('SELECT COUNT(*) AS count FROM persona WHERE NICKNAMEPERSONA = ? AND ESTADOPERSONA=true', [nickname], (err, rows) => {
         if (err) return res.send(err);
         const count = rows[0].count;
         const isNicknameAvailable = count === 0;
@@ -273,7 +277,7 @@ routes.get('/check-mail/:email', (req, res) => {
     const email = req.params.email;
     req.getConnection((err, conn) => {
       if (err) return res.send(err);
-      conn.query('SELECT COUNT(*) AS count FROM persona WHERE CORREOPERSONA = ?', [email], (err, rows) => {
+      conn.query('SELECT COUNT(*) AS count FROM persona WHERE CORREOPERSONA = ? AND ESTADOPERSONA=true', [email], (err, rows) => {
         if (err) return res.send(err);
         const count = rows[0].count;
         const isMailAvailable = count === 0;

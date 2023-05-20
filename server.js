@@ -13,10 +13,10 @@ const secretKey = process.env.SECRET_KEY;
 
 app.set('port', process.env.PORT || 9600)
 const dbOptions ={
-    host: 'mysql-127162-0.cloudclusters.net',
-    port: 10067,
-    user: 'admin',
-    password: 'xWhShC14',
+    host: 'localhost',
+    port: 3306,
+    user: 'root',
+    password: 'root',
     database: 'homefitgo'
 }
 

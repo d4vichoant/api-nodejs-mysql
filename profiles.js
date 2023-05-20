@@ -12,7 +12,7 @@ routes.use(fileUpload());
 routes.get('/',(req,res)=>{
     req.getConnection((err,conn)=>{
         if(err) return res.send(err)
-        conn.query('SELECT * FROM profiles',(err,rows)=>{
+        conn.query('SELECT * FROM persona ORDER BY NOMBREPERSONA',(err,rows)=>{
             if(err) return res.send(err)
             res.json(rows)
         })
@@ -42,7 +42,7 @@ routes.get('/especialidadentrenador',(req,res)=>{
 routes.get('/objetivospersonales',(req,res)=>{
   req.getConnection((err,conn)=>{
       if(err) return res.send(err)
-      conn.query('SELECT * FROM OBJETIVOSPERSONALES ',(err,rows)=>{
+      conn.query('SELECT * FROM objetivospersonales ',(err,rows)=>{
           if(err) return res.send(err)
           res.json(rows)
       })
@@ -235,17 +235,17 @@ routes.post('/login', (req, res) => {
               if (err) return res.send(err);
               const token = jwt.sign({ nickname }, secretKey);
               if (entrenadorRows.length > 0) {
-                res.json({ message: 'access trainer',token ,nickname});
+                res.json({ message: 'access trainer',token ,nickname,rolUsuario});
                }else{
-                res.json({ message: 'trainer not activated',token ,nickname });
+                res.json({ message: 'trainer not activated',token ,nickname ,rolUsuario});
                }
             });
           } else  {
             const token = jwt.sign({ nickname }, secretKey);
             if(rolUsuario === 99){
-              res.json({ message: 'all access',token ,nickname });
+              res.json({ message: 'all access',token ,nickname,rolUsuario });
             }else{
-              res.json({ message: 'access user',token ,nickname });
+              res.json({ message: 'access user',token ,nickname,rolUsuario });
             }
           }
         } else {

@@ -9,20 +9,50 @@ const cors = require('cors');
 routes.use(cors());
 routes.use(fileUpload());
 
-routes.get('/',(req,res)=>{
-    req.getConnection((err,conn)=>{
-        if(err) return res.send(err)
-        conn.query('SELECT * FROM persona ORDER BY NOMBREPERSONA',(err,rows)=>{
-            if(err) return res.send(err)
-            res.json(rows)
-        })
-    })
-})
+routes.get('/', (req, res) => {
+  req.getConnection((err, conn) => {
+    if (err) return res.send(err);
+
+    conn.query('SELECT IDPERSONA, IDGENERO, IDROLUSUARIO, NOMBREPERSONA, APELLDOPERSONA, CORREOPERSONA, NICKNAMEPERSONA, FECHANACIMIENTOPERSONA, FECHACREACIONPERSONA, FECHAMODIFICACIONPERSONA, USUARIOCREACIONPERSONA, USUARIOMODIFICACIONPERSONA, ESTADOPERSONA FROM persona ORDER BY NOMBREPERSONA', (err, rows) => {
+      if (err) return res.send(err);
+
+      res.json(rows);
+    });
+  });
+});
 
 routes.get('/frecuenciaejercicio',(req,res)=>{
   req.getConnection((err,conn)=>{
       if(err) return res.send(err)
       conn.query('SELECT * FROM frecuenciaejercicio',(err,rows)=>{
+          if(err) return res.send(err)
+          res.json(rows)
+      })
+  })
+})
+routes.get('/profesion',(req,res)=>{
+  req.getConnection((err,conn)=>{
+      if(err) return res.send(err)
+      conn.query('SELECT * FROM  profesion',(err,rows)=>{
+          if(err) return res.send(err)
+          res.json(rows)
+      })
+  })
+})
+routes.get('/rolUsers',(req,res)=>{
+  req.getConnection((err,conn)=>{
+      if(err) return res.send(err)
+      conn.query('SELECT * FROM rolusuario',(err,rows)=>{
+          if(err) return res.send(err)
+          res.json(rows)
+      })
+  })
+})
+
+routes.get('/genero',(req,res)=>{
+  req.getConnection((err,conn)=>{
+      if(err) return res.send(err)
+      conn.query('SELECT * FROM genero',(err,rows)=>{
           if(err) return res.send(err)
           res.json(rows)
       })
@@ -296,12 +326,46 @@ routes.delete('/:id',(req,res)=>{
     })
 })
 
-routes.put('/:id',(req,res)=>{
+routes.post('/updatePersona',(req,res)=>{
+  const persona = {
+    IDGENERO: req.body.IDGENERO,
+    IDROLUSUARIO: req.body.IDROLUSUARIO,
+    NOMBREPERSONA: req.body.NOMBREPERSONA,
+    APELLDOPERSONA: req.body.APELLDOPERSONA,
+    CORREOPERSONA: req.body.CORREOPERSONA,
+    NICKNAMEPERSONA: req.body.NICKNAMEPERSONA,
+    FECHANACIMIENTOPERSONA: req.body.FECHANACIMIENTOPERSONA,
+    FECHAMODIFICACIONPERSONA:new Date(),
+    USUARIOMODIFICACIONPERSONA: req.body.USUARIOMODIFICACIONPERSONA,
+    ESTADOPERSONA: req.body.ESTADOPERSONA,
+
+  };
     req.getConnection((err,conn)=>{
-        if(err) return res.send(err)
-        conn.query('UPDATE profiles set ? WHERE id = ?', [req.body,req.params.id], (err,rows)=>{
-            if(err) return res.send(err)
-            res.send('persona updated!')
+        if(err) return res.json(err)
+        conn.query('UPDATE persona SET ? WHERE IDPERSONA = ?', [persona,req.body.IDPERSONA], (err,rows)=>{
+          if (err) {
+            return res.status(500).json({ error: 'Error al actualizar Datos'+err });
+          }
+            res.json({ message: 'Actualizado Datos Correctamente !'});
+        }) 
+    })
+})
+
+routes.post('/updateEntrenante',(req,res)=>{
+  const persona = {
+    IDPROFESION : req.body.IDPROFESION ,
+    IDFRECUENCIA : req.body.IDFRECUENCIA ,
+    PESOUSUARIO: req.body.PESOUSUARIO,
+    ALTURAUSUARIO: req.body.ALTURAUSUARIO,
+    NOTIFICACIONUSUARIO: req.body.NOTIFICACIONUSUARIO,
+  };
+    req.getConnection((err,conn)=>{
+        if(err) return res.json(err)
+        conn.query('UPDATE usuario SET ? WHERE IDPERSONA = ? AND IDUSUARIO = ? ', [persona,req.body.IDPERSONA,req.body.IDUSUARIO], (err,rows)=>{
+          if (err) {
+            return res.status(500).json({ error: 'Error al actualizar Datos'+err });
+          }
+            res.json({ message: 'Actualizado Datos Correctamente !'});
         }) 
     })
 })

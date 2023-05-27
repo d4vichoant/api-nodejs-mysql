@@ -16,7 +16,7 @@ const dbOptions ={
     host: 'localhost',
     port: 3306,
     user: 'root',
-    password: 'root',
+    password: '',
     database: 'homefitgo'
 }
 
@@ -35,7 +35,7 @@ app.use(cors());
 app.use('/media', express.static('media'));
 //routes -------------------
 app.get('/',(req,res)=>{
-    res.send('Welcome to my API')
+    res.send('Welcome to my  API')
 })
 
 app.get('/protectedtoken', (req, res) => {

@@ -253,7 +253,7 @@ routes.post('/login', (req, res) => {
   const { nickname, password } = req.body;
   req.getConnection((err, conn) => {
     if (err) return res.send(err);
-    conn.query('SELECT * FROM persona WHERE NICKNAMEPERSONA = ? AND ESTADOPERSONA = true LIMIT 1;', [nickname], (err, rows) => {
+    conn.query('SELECT * FROM persona WHERE NICKNAMEPERSONA = ? AND ESTADOPERSONA = true LIMIT 1', [nickname], (err, rows) => {
       if (err) return res.send(err);
       if (rows.length > 0) {
         const storedPassword = rows[0].CONTRASENIAPERSONA;
@@ -315,60 +315,181 @@ routes.get('/check-mail/:email', (req, res) => {
       });
     });
   });
+
+  routes.post('/updatePersona',(req,res)=>{
+    const persona = {
+      IDGENERO: req.body.IDGENERO,
+      IDROLUSUARIO: req.body.IDROLUSUARIO,
+      NOMBREPERSONA: req.body.NOMBREPERSONA,
+      APELLDOPERSONA: req.body.APELLDOPERSONA,
+      CORREOPERSONA: req.body.CORREOPERSONA,
+      NICKNAMEPERSONA: req.body.NICKNAMEPERSONA,
+      FECHANACIMIENTOPERSONA: req.body.FECHANACIMIENTOPERSONA,
+      FECHAMODIFICACIONPERSONA:new Date(),
+      USUARIOMODIFICACIONPERSONA: req.body.USUARIOMODIFICACIONPERSONA,
+      ESTADOPERSONA: req.body.ESTADOPERSONA,
   
-routes.delete('/:id',(req,res)=>{
-    req.getConnection((err,conn)=>{
-        if(err) return res.send(err)
-        conn.query('DELETE FROM  profiles WHERE id = ?', [req.params.id], (err,rows)=>{
-            if(err) return res.send(err)
-            res.send('persona excluded!')
-        }) 
-    })
-})
+    };
+      req.getConnection((err,conn)=>{
+          if(err) return res.json(err)
+          conn.query('UPDATE persona SET ? WHERE IDPERSONA = ?', [persona,req.body.IDPERSONA], (err,rows)=>{
+            if (err) {
+              return res.status(500).json({ error: 'Error al actualizar Datos'+err });
+            }
+              res.json({ message: 'Actualizado Datos Correctamente !'});
+          }); 
+      });
+  });
 
-routes.post('/updatePersona',(req,res)=>{
+routes.post('/updateEntrenante', (req, res) => {
   const persona = {
-    IDGENERO: req.body.IDGENERO,
-    IDROLUSUARIO: req.body.IDROLUSUARIO,
-    NOMBREPERSONA: req.body.NOMBREPERSONA,
-    APELLDOPERSONA: req.body.APELLDOPERSONA,
-    CORREOPERSONA: req.body.CORREOPERSONA,
-    NICKNAMEPERSONA: req.body.NICKNAMEPERSONA,
-    FECHANACIMIENTOPERSONA: req.body.FECHANACIMIENTOPERSONA,
-    FECHAMODIFICACIONPERSONA:new Date(),
-    USUARIOMODIFICACIONPERSONA: req.body.USUARIOMODIFICACIONPERSONA,
-    ESTADOPERSONA: req.body.ESTADOPERSONA,
-
-  };
-    req.getConnection((err,conn)=>{
-        if(err) return res.json(err)
-        conn.query('UPDATE persona SET ? WHERE IDPERSONA = ?', [persona,req.body.IDPERSONA], (err,rows)=>{
-          if (err) {
-            return res.status(500).json({ error: 'Error al actualizar Datos'+err });
-          }
-            res.json({ message: 'Actualizado Datos Correctamente !'});
-        }) 
-    })
-})
-
-routes.post('/updateEntrenante',(req,res)=>{
-  const persona = {
-    IDPROFESION : req.body.IDPROFESION ,
-    IDFRECUENCIA : req.body.IDFRECUENCIA ,
+    IDPROFESION: req.body.IDPROFESION,
+    IDFRECUENCIA: req.body.IDFRECUENCIA,
     PESOUSUARIO: req.body.PESOUSUARIO,
     ALTURAUSUARIO: req.body.ALTURAUSUARIO,
     NOTIFICACIONUSUARIO: req.body.NOTIFICACIONUSUARIO,
   };
-    req.getConnection((err,conn)=>{
-        if(err) return res.json(err)
-        conn.query('UPDATE usuario SET ? WHERE IDPERSONA = ? AND IDUSUARIO = ? ', [persona,req.body.IDPERSONA,req.body.IDUSUARIO], (err,rows)=>{
+
+  req.getConnection((err, conn) => {
+    if (err) return res.json(err);
+
+    conn.beginTransaction((err) => {
+      if (err) {
+        return res.status(500).json({ error: 'Error al iniciar la transacción' + err });
+      }
+
+      // Agregar consulta para eliminar registros
+      conn.query('DELETE FROM objetivospersonalesusuario WHERE IDUSUARIO = ?', [req.body.IDUSUARIO], (err, rows) => {
+        if (err) {
+          conn.rollback(() => {
+            return res.status(500).json({ error: 'Error al eliminar registros' + err });
+          });
+        }
+
+        // Realizar la actualización de datos después de eliminar los registros
+        conn.query('UPDATE usuario SET ? WHERE IDPERSONA = ? AND IDUSUARIO = ?', [persona, req.body.IDPERSONA, req.body.IDUSUARIO], (err, rows) => {
           if (err) {
-            return res.status(500).json({ error: 'Error al actualizar Datos'+err });
+            conn.rollback(() => {
+              return res.status(500).json({ error: 'Error al actualizar datos' + err });
+            });
           }
-            res.json({ message: 'Actualizado Datos Correctamente !'});
-        }) 
-    })
-})
+
+          if (req.body.OBJETIVOSPERSONALES && req.body.OBJETIVOSPERSONALES.length > 0) {
+            const usuarioId = req.body.IDUSUARIO;
+            const objetivosInserts = req.body.OBJETIVOSPERSONALES.map(objetivo => {
+              return [usuarioId, objetivo];
+            });
+
+            conn.query('INSERT INTO objetivospersonalesusuario (IDUSUARIO, IDOBJETIVOSPERSONALES) VALUES ?', [objetivosInserts], (err, result) => {
+              if (err) {
+                conn.rollback(() => {
+                  return res.status(500).json({ error: 'Error al insertar registros en objetivospersonalesusuario' + err });
+                });
+              }
+
+              conn.commit((err) => {
+                if (err) {
+                  conn.rollback(() => {
+                    return res.status(500).json({ error: 'Error al confirmar la transacción' + err });
+                  });
+                }
+
+                res.json({ message: '¡Datos actualizados correctamente!' });
+              });
+            });
+          } else {
+            // No hay OBJETIVOSPERSONALES proporcionados, continuar con el commit y respuesta
+            conn.commit((err) => {
+              if (err) {
+                conn.rollback(() => {
+                  return res.status(500).json({ error: 'Error al confirmar la transacción' + err });
+                });
+              }
+
+              res.json({ message: '¡Datos actualizados correctamente!' });
+            });
+          }
+        });
+      });
+    });
+  });
+});
+
+routes.post('/updateEntrenador', (req, res) => {
+  const entrenador = {
+    TARIFASENTRENADOR: req.body.TARIFASENTRENADOR,
+    EXPERIENCIAENTRENADOR: req.body.EXPERIENCIAENTRENADOR,
+    DESCRIPCIONENTRENADOR: req.body.DESCRIPCIONENTRENADOR,
+    ACTIVACIONENTRENADOR: req.body.ACTIVACIONENTRENADOR, 
+    CERTIFICACIONESENTRENADOR: JSON.stringify(req.body.CERTIFICACIONESENTRENADOR),
+  };
+
+  req.getConnection((err, conn) => {
+    if (err) return res.json(err);
+
+    conn.beginTransaction((err) => {
+      if (err) {
+        return res.status(500).json({ error: 'Error al iniciar la transacción' + err });
+      }
+
+      // Agregar consulta para eliminar registros
+      conn.query('DELETE FROM  especialidadentrenadorentrenador WHERE IDENTRENADOR  = ?', [req.body.IDENTRENADOR], (err, rows) => {
+        if (err) {
+          conn.rollback(() => {
+            return res.status(500).json({ error: 'Error al eliminar registros' + err });
+          });
+        }
+
+        // Realizar la actualización de datos después de eliminar los registros
+        conn.query('UPDATE entrenador SET ? WHERE IDPERSONA = ? AND IDENTRENADOR = ?', [entrenador, req.body.IDPERSONA, req.body.IDENTRENADOR], (err, rows) => {
+          if (err) {
+            conn.rollback(() => {
+              return res.status(500).json({ error: 'Error al actualizar datos' + err });
+            });
+          }
+
+          if (req.body.idespecialidadentrenador && req.body.idespecialidadentrenador.length > 0) {
+            const entrenadorId = req.body.IDENTRENADOR;
+            const objetivosInserts = req.body.idespecialidadentrenador.map(especialidad => {
+              return [entrenadorId, especialidad];
+            });
+
+            conn.query('INSERT INTO especialidadentrenadorentrenador (IDENTRENADOR, idespecialidadentrenador) VALUES ?', [objetivosInserts], (err, result) => {
+              if (err) {
+                conn.rollback(() => {
+                  return res.status(500).json({ error: 'Error al insertar registros en Especialidad' + err });
+                });
+              }
+
+              conn.commit((err) => {
+                if (err) {
+                  conn.rollback(() => {
+                    return res.status(500).json({ error: 'Error al confirmar la transacción' + err });
+                  });
+                }
+
+                res.json({ message: '¡Datos actualizados correctamente!' });
+              });
+            });
+          } else {
+            // No hay OBJETIVOSPERSONALES proporcionados, continuar con el commit y respuesta
+            conn.commit((err) => {
+              if (err) {
+                conn.rollback(() => {
+                  return res.status(500).json({ error: 'Error al confirmar la transacción' + err });
+                });
+              }
+
+              res.json({ message: '¡Datos actualizados correctamente!' });
+            });
+          }
+        });
+      });
+    });
+  });
+});
+
+
 
 routes.post('/subir-archivo', (req, res) => {
   if (!req.files || Object.keys(req.files).length === 0) {
@@ -385,6 +506,16 @@ routes.post('/subir-archivo', (req, res) => {
     }
 
     res.json({ message: 'Archivo subido correctamente', filePath });
+  });
+});
+
+routes.post('/:nickname', (req, res) => {
+  req.getConnection((err, conn) => {
+    if (err) return res.send(err);
+    conn.query('SELECT `IDPERSONA`, `IDGENERO`, `IDROLUSUARIO`, `NOMBREPERSONA`, `APELLDOPERSONA`, `CORREOPERSONA`, `NICKNAMEPERSONA`, `FECHANACIMIENTOPERSONA` FROM `persona` WHERE NICKNAMEPERSONA = ? AND ESTADOPERSONA = true LIMIT 1', [req.params.nickname], (err, rows) => {
+      if (err) return res.json(err);
+      res.json(rows);
+    });
   });
 });
 

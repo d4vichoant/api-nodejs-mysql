@@ -69,6 +69,16 @@ routes.get('/especialidadentrenador',(req,res)=>{
   })
 })
 
+routes.get('/passwordHash/:nickname',(req,res)=>{
+  req.getConnection((err,conn)=>{
+      if(err) return res.json(err)
+      conn.query('SELECT CONTRASENIAPERSONA FROM persona where NICKNAMEPERSONA=? ',[req.params.nickname],(err,rows)=>{
+          if(err) return res.json(err)
+          res.json(rows)
+      })
+  })
+})
+
 routes.get('/objetivospersonales',(req,res)=>{
   req.getConnection((err,conn)=>{
       if(err) return res.send(err)
@@ -250,15 +260,13 @@ routes.post('/guardarDatosEntrenador', (req, res) => {
 });
 
 routes.post('/login', (req, res) => {
-  const { nickname, password } = req.body;
+  const { nickname} = req.body;
   req.getConnection((err, conn) => {
     if (err) return res.send(err);
     conn.query('SELECT * FROM persona WHERE NICKNAMEPERSONA = ? AND ESTADOPERSONA = true LIMIT 1', [nickname], (err, rows) => {
       if (err) return res.send(err);
       if (rows.length > 0) {
-        const storedPassword = rows[0].CONTRASENIAPERSONA;
         const rolUsuario = rows[0].IDROLUSUARIO ;
-        if (password === storedPassword) {
           if (rolUsuario === 2) {
             const query = 'SELECT * FROM entrenador en, persona per WHERE en.IDPERSONA = per.IDPERSONA AND en.ACTIVACIONENTRENADOR = true AND per.NICKNAMEPERSONA = ? LIMIT 1;';
             conn.query(query, [nickname], (err, entrenadorRows) => {
@@ -278,9 +286,6 @@ routes.post('/login', (req, res) => {
               res.json({ message: 'access user',token ,nickname,rolUsuario });
             }
           }
-        } else {
-          res.status(401).json({ message: 'Credenciales Invalidas' });
-        }
       } else {
         res.status(401).json({ message: 'Invalido Usuario y/o contraseña' });
       }

@@ -5,6 +5,7 @@ const mysql = require('mysql')
 const myconn = require('express-myconnection')
 const routesprofile = require('./profiles')
 const routesmanager =require('./manager')
+const routesmultimedia =require('./multimedia')
 
 const app = express()
 const cors = require('cors');
@@ -33,6 +34,7 @@ app.use(express.json())
 app.use(cors());
 
 app.use('/media', express.static('media'));
+app.use('/multimedia', express.static('multimedia'));
 //routes -------------------
 app.get('/',(req,res)=>{
     res.send('Welcome to my  API')
@@ -53,6 +55,7 @@ app.get('/protectedtoken', (req, res) => {
   
 app.use('/profiles',routesprofile)
 app.use('/manager',routesmanager)
+app.use('/multimedia',routesmultimedia)
 
 //server running -----------------
 app.listen(app.get('port'),()=>{

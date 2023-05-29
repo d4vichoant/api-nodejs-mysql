@@ -27,7 +27,7 @@ routes.get('/',(req,res)=>{
         `,(err,rows)=>{
         if(err) return res.send(err)
         rows.forEach(row => {
-            if (typeof row.CERTIFICACIONESENTRENADOR === 'string') {
+            if (row.CERTIFICACIONESENTRENADOR  && typeof row.CERTIFICACIONESENTRENADOR === 'string') {
                 row.CERTIFICACIONESENTRENADOR = JSON.parse(row.CERTIFICACIONESENTRENADOR);
             }
         });

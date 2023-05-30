@@ -24,10 +24,9 @@ const dbOptions ={
 // Agregar middleware para permitir CORS
 app.use(function(req, res, next) {
   res.header("Access-Control-Allow-Origin", "*");
-  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
   next();
 });
-
 //middlewares ------------ (programas intermedios)
 app.use(myconn(mysql,dbOptions, 'single'))
 app.use(express.json())

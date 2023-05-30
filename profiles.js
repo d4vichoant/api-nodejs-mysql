@@ -73,7 +73,7 @@ routes.get('/passwordHash/:nickname',(req,res)=>{
   req.getConnection((err,conn)=>{
       if(err) return res.json(err)
       conn.query('SELECT CONTRASENIAPERSONA FROM persona where NICKNAMEPERSONA=? ',[req.params.nickname],(err,rows)=>{
-          if(err) return res.json(err)
+          if(err) return res.json("Usuario No Encontrador")
           res.json(rows)
       })
   })
@@ -83,7 +83,7 @@ routes.get('/objetivospersonales',(req,res)=>{
   req.getConnection((err,conn)=>{
       if(err) return res.send(err)
       conn.query('SELECT * FROM objetivospersonales ',(err,rows)=>{
-          if(err) return res.send(err)
+          if(err) return res.json(err)
           res.json(rows)
       })
   })
@@ -329,7 +329,6 @@ routes.get('/check-mail/:email', (req, res) => {
       APELLDOPERSONA: req.body.APELLDOPERSONA,
       CORREOPERSONA: req.body.CORREOPERSONA,
       NICKNAMEPERSONA: req.body.NICKNAMEPERSONA,
-      FECHANACIMIENTOPERSONA: req.body.FECHANACIMIENTOPERSONA,
       FECHAMODIFICACIONPERSONA:new Date(),
       USUARIOMODIFICACIONPERSONA: req.body.USUARIOMODIFICACIONPERSONA,
       ESTADOPERSONA: req.body.ESTADOPERSONA,

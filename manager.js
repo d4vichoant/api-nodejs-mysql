@@ -40,7 +40,7 @@ routes.get('/entrenante',(req,res)=>{
         if(err) return res.send(err)
         conn.query(`
         SELECT
-        p.IDPERSONA, p.IDGENERO, p.IDROLUSUARIO, p.NOMBREPERSONA, p.APELLDOPERSONA, p.CORREOPERSONA, p.NICKNAMEPERSONA, p.FECHANACIMIENTOPERSONA, p.CONTRASENIAPERSONA,
+        p.IDPERSONA, p.IDGENERO, p.IDROLUSUARIO, p.NOMBREPERSONA, p.APELLDOPERSONA, p.CORREOPERSONA, p.NICKNAMEPERSONA, p.FECHANACIMIENTOPERSONA,
         p.ESTADOPERSONA, u.IDUSUARIO, u.IDPROFESION, u.PESOUSUARIO, u.ALTURAUSUARIO, u.MEDIDASCORPORALESUSUARIO, u.NOTIFICACIONUSUARIO, pr.DESCRIPCIONPROFESION, u.IDFRECUENCIA, f.TituloFrecuenciaEjercicio,
         f.DESCRIPCIONFRECUENCIA,
         GROUP_CONCAT(o.IDOBJETIVOSPERSONALES SEPARATOR ',') AS OBJETIVOSPERSONALES
@@ -120,10 +120,18 @@ routes.post('/activacion/:id', (req, res) => {
     }) 
     });
   });
+  routes.post('/updatepassword/', (req, res) => {
+    console.log(req.body);
+    req.getConnection((err, conn) => {
+      if (err) return res.json(err);
+      conn.query('UPDATE persona SET CONTRASENIAPERSONA = ?, USUARIOMODIFICACIONPERSONA	=?,FECHAMODIFICACIONPERSONA =? WHERE IDPERSONA = ?', [req.body.CONTRASENIAPERSONA,req.body.USUARIOMODIFICACIONPERSONA,new Date(),req.body.IDPERSONA], (err,rows)=>{
+        if(err) return res.json(err)
+        res.json({ message: 'Los datos han sido actualizada correctamente.' });
+    }) 
+    });
+  });
 
   routes.post('/updatePersona',(req,res)=>{
-    console.log("ola");
-    console.log(req.body);
     const persona = {
       IDGENERO: req.body.IDGENERO,
       IDROLUSUARIO: req.body.IDROLUSUARIO,

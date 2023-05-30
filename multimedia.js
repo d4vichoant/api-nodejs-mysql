@@ -5,7 +5,7 @@ routes.get('/', (req, res) => {
     req.getConnection((err, conn) => {
       if (err) return res.send(err);
   
-      conn.query('SELECT * FROM `multimedia` ORDER BY `TITULOMULTIMEDIA`', (err, rows) => {
+      conn.query('SELECT * FROM `multimedia` ORDER BY 1', (err, rows) => {
         if (err) return res.send(err);
   
         res.json(rows);

@@ -513,6 +513,7 @@ routes.post('/subir-archivo', (req, res) => {
   });
 });
 
+
 routes.post('/:nickname', (req, res) => {
   req.getConnection((err, conn) => {
     if (err) return res.send(err);

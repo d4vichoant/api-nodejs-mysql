@@ -1,11 +1,25 @@
 const express = require('express');
 const routes = express.Router();
+const fileUpload = require('express-fileupload');
+
+routes.use(fileUpload());
 
 routes.get('/', (req, res) => {
     req.getConnection((err, conn) => {
       if (err) return res.send(err);
   
       conn.query('SELECT * FROM `multimedia` ORDER BY 1', (err, rows) => {
+        if (err) return res.send(err);
+  
+        res.json(rows);
+      });
+    });
+  });
+  routes.get('/multimediaActivate', (req, res) => {
+    req.getConnection((err, conn) => {
+      if (err) return res.send(err);
+  
+      conn.query('SELECT * FROM `multimedia` WHERE STATUSMULTIMEDIA = 1 ORDER BY 1', (err, rows) => {
         if (err) return res.send(err);
   
         res.json(rows);
@@ -29,7 +43,18 @@ routes.get('/', (req, res) => {
     req.getConnection((err, conn) => {
       if (err) return res.send(err);
   
-      conn.query('SELECT * FROM `tipoejercicio` order by `titulotipoejercicio`', (err, rows) => {
+      conn.query('SELECT * FROM `tipoejercicio` order by `NOMBRETIPOEJERCICIO`', (err, rows) => {
+        if (err) return res.send(err);
+  
+        res.json(rows);
+      });
+    });
+  });
+  routes.get('/tipoejercicioActivate', (req, res) => {
+    req.getConnection((err, conn) => {
+      if (err) return res.send(err);
+  
+      conn.query('SELECT * FROM `tipoejercicio` WHERE STATUSTIPOEJERCICIO= 1 order by `NOMBRETIPOEJERCICIO` ', (err, rows) => {
         if (err) return res.send(err);
   
         res.json(rows);
@@ -40,7 +65,18 @@ routes.get('/', (req, res) => {
     req.getConnection((err, conn) => {
       if (err) return res.send(err);
   
-      conn.query('SELECT * FROM `objetivosmusculares` ORDER BY `NOMBREOBJETIVOMUSCULAR`', (err, rows) => {
+      conn.query('SELECT * FROM `objetivosmusculares` ORDER BY `NOMBREOBJETIVOSMUSCULARES`', (err, rows) => {
+        if (err) return res.send(err);
+  
+        res.json(rows);
+      });
+    });
+  });
+  routes.get('/objetivosmuscularesActivate', (req, res) => {
+    req.getConnection((err, conn) => {
+      if (err) return res.send(err);
+  
+      conn.query('SELECT * FROM `objetivosmusculares` where STATUSOBJETIVOSMUSCULARES = 1 ORDER BY `NOMBREOBJETIVOSMUSCULARES`', (err, rows) => {
         if (err) return res.send(err);
   
         res.json(rows);
@@ -52,7 +88,7 @@ routes.get('/', (req, res) => {
       if (err) return res.send(err);
   
       conn.query(`
-      SELECT e.IDEJERCICIO, e.IDMULTIMEDIA, m.TITULOMULTIMEDIA, m.DESCRIPCIONMULTIMEDIA, m.ALMACENAMIENTOMULTIMEDIA, m.OBSERVACIONESMULTIMEDIA, e.IDTIPOEJERCICIO, t.titulotipoejercicio, e.IDNIVELDIFICULTADEJERCICIO, e.IDENTRENADOR, e.IDOBJETIVOMUSCULAR, e.NOMBREEJERCICIO, e.DESCRIPCIONEJERCICIO, e.INTRUCCIONESEJERCICIO, e.PESOLEVANTADOEJERCICIO, e.REPETICIONESEJERCICIO, e.TIEMPOREALIZACIONEJERCICIO, e.SERIESEJERCICIO, e.VARIACIONESMODIFICACIONEJERCICIOPROGRESO, e.OBSERVACIONESEJERCICIO, e.FECHACREACIONEJERCICIO, e.FECHAMODIFICACIONEJERCICIO, e.USUARIOCREACIONEJERCICIO, e.USUARIOMODIFICAICONEJERCICIO, e.ESTADOEJERCICIO
+      SELECT e.IDEJERCICIO, e.IDMULTIMEDIA, m.TITULOMULTIMEDIA, m.DESCRIPCIONMULTIMEDIA, m.ALMACENAMIENTOMULTIMEDIA, m.OBSERVACIONMULTIMEDIA, e.IDTIPOEJERCICIO, t.NOMBRETIPOEJERCICIO, e.IDNIVELDIFICULTADEJERCICIO, e.IDENTRENADOR, e.IDOBJETIVOMUSCULAR, e.NOMBREEJERCICIO, e.DESCRIPCIONEJERCICIO, e.INTRUCCIONESEJERCICIO, e.PESOLEVANTADOEJERCICIO, e.REPETICIONESEJERCICIO, e.TIEMPOREALIZACIONEJERCICIO, e.SERIESEJERCICIO, e.VARIACIONESMODIFICACIONEJERCICIOPROGRESO, e.OBSERVACIONESEJERCICIO, e.FECHACREACIONEJERCICIO, e.FECHAMODIFICACIONEJERCICIO, e.USUARIOCREACIONEJERCICIO, e.USUARIOMODIFICAICONEJERCICIO, e.ESTADOEJERCICIO
       FROM ejercicio AS e
       JOIN tipoejercicio AS t ON e.IDTIPOEJERCICIO = t.IDTIPOEJERCICIO
       JOIN multimedia AS m ON e.IDMULTIMEDIA = m.IDMULTIMEDIA
@@ -69,7 +105,7 @@ routes.get('/', (req, res) => {
       if (err) return res.send(err);
   
       conn.query(`
-      SELECT e.IDEJERCICIO, e.IDMULTIMEDIA, m.TITULOMULTIMEDIA,  m.ALMACENAMIENTOMULTIMEDIA,  e.IDTIPOEJERCICIO, t.titulotipoejercicio, e.IDNIVELDIFICULTADEJERCICIO,
+      SELECT e.IDEJERCICIO, e.IDMULTIMEDIA, m.TITULOMULTIMEDIA,  m.ALMACENAMIENTOMULTIMEDIA,  e.IDTIPOEJERCICIO, t.NOMBRETIPOEJERCICIO, e.IDNIVELDIFICULTADEJERCICIO,
       n.tituloniveldificultadejercicio ,e.NOMBREEJERCICIO, e.ESTADOEJERCICIO
       FROM ejercicio AS e
       JOIN tipoejercicio AS t ON e.IDTIPOEJERCICIO = t.IDTIPOEJERCICIO
@@ -94,6 +130,83 @@ routes.get('/', (req, res) => {
       });
     });
   });
+  routes.post('/chanceActivacion/:nombre', (req, res) => {
+    req.getConnection((err, conn) => {
+      if (err) return res.json(err);
+      const observacion = `OBSERVACION${req.params.nombre.toUpperCase()}`;
+      const observacionValue = req.body[observacion];
+      const status = `STATUS${req.params.nombre.toUpperCase()}`;
+      const statusValue = req.body[status];
+      const id = `ID${req.params.nombre.toUpperCase()}`;
+      const idValue = req.body[id];
+      conn.query('UPDATE ?? SET ?? = ?, ??=? WHERE ?? = ?', [req.params.nombre, status, statusValue,observacion,observacionValue, id, idValue], (err, rows) => {
+        if (err) return res.json(err)
+        res.json({ message: 'La activación ha sido actualizada.' });
+      });
+    });
+  });
+  routes.post('/UpdateData/:nombre', (req, res) => {
+    req.getConnection((err, conn) => {
+      if (err) return res.json(err);
+      const nombre = `NOMBRE${req.params.nombre.toUpperCase()}`;
+      const nombreValue = req.body[nombre];
+      const descripcion = `DESCRIPCION${req.params.nombre.toUpperCase()}`;
+      const descripcionValue = req.body[descripcion];
+      const observacion = `OBSERVACION${req.params.nombre.toUpperCase()}`;
+      const observacionValue = req.body[observacion];
+      const status = `STATUS${req.params.nombre.toUpperCase()}`;
+      const statusValue = req.body[status];
+      const id = `ID${req.params.nombre.toUpperCase()}`;
+      const idValue = req.body[id];
+  
+      conn.query('UPDATE ?? SET   ?? = ?,  ?? = ?, ?? = ?, ??=? WHERE ?? = ?', [req.params.nombre, nombre, nombreValue,descripcion,descripcionValue, status, statusValue,observacion,observacionValue, id, idValue], (err, rows) => {
+        if (err) return res.json(err)
+        res.json({ message: 'La activación ha sido actualizada.' });
+      });
+    });
+  });
+
+  routes.post('/CreateData/:nombre', (req, res) => {
+    req.getConnection((err, conn) => {
+      if (err) return res.json(err);
+      const nombre = `NOMBRE${req.params.nombre.toUpperCase()}`;
+      const nombreValue = req.body[nombre];
+      const descripcion = `DESCRIPCION${req.params.nombre.toUpperCase()}`;
+      const descripcionValue = req.body[descripcion];
+      const observacion = `OBSERVACION${req.params.nombre.toUpperCase()}`;
+      const observacionValue = req.body[observacion];
+      const status = `STATUS${req.params.nombre.toUpperCase()}`;
+      const statusValue = req.body[status];
+  
+      conn.query('INSERT INTO ?? (??, ??, ??, ??) VALUES (?, ?, ?, ?)', [req.params.nombre, nombre, descripcion, status, observacion, nombreValue, descripcionValue, statusValue, observacionValue], (err, rows) => {
+        if (err) return res.json(err)
+        res.json({ message: 'El registro ha sido creado.' });
+      });
+    });
+  });
+
+  routes.post('/UpdateDataMultimedia/:nombre', (req, res) => {
+    req.getConnection((err, conn) => {
+      if (err) return res.json(err);
+      const titulo = `TITULO${req.params.nombre.toUpperCase()}`;
+      const tituloValue = req.body[titulo];
+      const descripcion = `DESCRIPCION${req.params.nombre.toUpperCase()}`;
+      const descripcionValue = req.body[descripcion];
+      const almacenamiento = `ALMACENAMIENTO${req.params.nombre.toUpperCase()}`;
+      const almacenamientoValue = req.body[almacenamiento];
+      const observacion = `OBSERVACION${req.params.nombre.toUpperCase()}`;
+      const observacionValue = req.body[observacion];
+      const status = `STATUS${req.params.nombre.toUpperCase()}`;
+      const statusValue = req.body[status];
+      const id = `ID${req.params.nombre.toUpperCase()}`;
+      const idValue = req.body[id];
+  
+      conn.query('UPDATE ?? SET   ?? = ?,  ?? = ?, ?? = ?, ?? = ?, ??=? WHERE ?? = ?', [req.params.nombre, titulo, tituloValue,descripcion,descripcionValue, almacenamiento,almacenamientoValue ,status, statusValue,observacion,observacionValue, id, idValue], (err, rows) => {
+        if (err) return res.json(err)
+        res.json({ message: 'Los Datos ham sido actualizado.' });
+      });
+    });
+  });
 
   routes.post('/estado/:id', (req, res) => {
     req.getConnection((err, conn) => {
@@ -111,6 +224,26 @@ routes.get('/', (req, res) => {
       });
     });
   });
+
+  routes.post('/subir-archivo', (req, res) => {
+    if (!req.files || Object.keys(req.files).length === 0) {
+      return res.status(400).json({ error: 'No se ha seleccionado ningún archivo' });
+    }
+  
+    const file = req.files.file;
+  
+    // Mueve el archivo al directorio deseado
+    const filePath = './multimedia/' + file.name;
+    file.mv(filePath, error => {
+      if (error) {
+        return res.status(500).json({ error: 'Error al subir el archivo' });
+      }
+  
+      res.json({ message: 'Archivo subido correctamente', filePath });
+    });
+  });
+  
+  
   
   
 module.exports = routes;

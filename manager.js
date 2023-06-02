@@ -57,7 +57,8 @@ routes.get('/entrenante',(req,res)=>{
         WHERE
             p.IDROLUSUARIO = 1
         GROUP BY
-            u.IDUSUARIO;
+            p.IDPERSONA, u.IDUSUARIO
+        
         `,(err,rows)=>{
         if(err) return res.send(err)
             res.json(rows)

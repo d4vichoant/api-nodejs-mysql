@@ -122,7 +122,6 @@ routes.post('/activacion/:id', (req, res) => {
     });
   });
   routes.post('/updatepassword/', (req, res) => {
-    console.log(req.body);
     req.getConnection((err, conn) => {
       if (err) return res.json(err);
       conn.query('UPDATE persona SET CONTRASENIAPERSONA = ?, USUARIOMODIFICACIONPERSONA	=?,FECHAMODIFICACIONPERSONA =? WHERE IDPERSONA = ?', [req.body.CONTRASENIAPERSONA,req.body.USUARIOMODIFICACIONPERSONA,new Date(),req.body.IDPERSONA], (err,rows)=>{

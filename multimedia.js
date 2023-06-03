@@ -88,9 +88,10 @@ routes.get('/', (req, res) => {
       if (err) return res.send(err);
   
       conn.query(`
-      SELECT e.IDEJERCICIO, e.IDMULTIMEDIA, m.TITULOMULTIMEDIA, m.DESCRIPCIONMULTIMEDIA, m.ALMACENAMIENTOMULTIMEDIA, m.OBSERVACIONMULTIMEDIA, e.IDTIPOEJERCICIO, t.NOMBRETIPOEJERCICIO, e.IDNIVELDIFICULTADEJERCICIO, e.IDENTRENADOR, e.IDOBJETIVOMUSCULAR, e.NOMBREEJERCICIO, e.DESCRIPCIONEJERCICIO, e.INTRUCCIONESEJERCICIO, e.PESOLEVANTADOEJERCICIO, e.REPETICIONESEJERCICIO, e.TIEMPOREALIZACIONEJERCICIO, e.SERIESEJERCICIO, e.VARIACIONESMODIFICACIONEJERCICIOPROGRESO, e.OBSERVACIONESEJERCICIO, e.FECHACREACIONEJERCICIO, e.FECHAMODIFICACIONEJERCICIO, e.USUARIOCREACIONEJERCICIO, e.USUARIOMODIFICAICONEJERCICIO, e.ESTADOEJERCICIO
+      SELECT e.IDEJERCICIO, e.IDMULTIMEDIA, m.TITULOMULTIMEDIA, m.DESCRIPCIONMULTIMEDIA, m.ALMACENAMIENTOMULTIMEDIA, m.OBSERVACIONMULTIMEDIA, e.IDTIPOEJERCICIO, t.NOMBRETIPOEJERCICIO, e.IDNIVELDIFICULTADEJERCICIO,n.tituloniveldificultadejercicio , e.IDENTRENADOR, e.IDOBJETIVOMUSCULAR, e.NOMBREEJERCICIO, e.DESCRIPCIONEJERCICIO, e.INTRUCCIONESEJERCICIO, e.PESOLEVANTADOEJERCICIO, e.REPETICIONESEJERCICIO, e.TIEMPOREALIZACIONEJERCICIO, e.SERIESEJERCICIO, e.VARIACIONESMODIFICACIONEJERCICIOPROGRESO, e.OBSERVACIONESEJERCICIO, e.FECHACREACIONEJERCICIO, e.FECHAMODIFICACIONEJERCICIO, e.USUARIOCREACIONEJERCICIO, e.USUARIOMODIFICAICONEJERCICIO, e.ESTADOEJERCICIO
       FROM ejercicio AS e
       JOIN tipoejercicio AS t ON e.IDTIPOEJERCICIO = t.IDTIPOEJERCICIO
+      JOIN niveldificultadejercicio AS n ON e.IDNIVELDIFICULTADEJERCICIO = n.IDNIVELDIFICULTADEJERCICIO
       JOIN multimedia AS m ON e.IDMULTIMEDIA = m.IDMULTIMEDIA
       WHERE 1;
       `, (err, rows) => {
@@ -208,6 +209,26 @@ routes.get('/', (req, res) => {
     });
   });
 
+  routes.post('/CreateDataMultimedia/:nombre', (req, res) => {
+    req.getConnection((err, conn) => {
+      if (err) return res.json(err);
+      const titulo = `TITULO${req.params.nombre.toUpperCase()}`;
+      const tituloValue = req.body[titulo];
+      const descripcion = `DESCRIPCION${req.params.nombre.toUpperCase()}`;
+      const descripcionValue = req.body[descripcion];
+      const almacenamiento = `ALMACENAMIENTO${req.params.nombre.toUpperCase()}`;
+      const almacenamientoValue = req.body[almacenamiento];
+      const observacion = `OBSERVACION${req.params.nombre.toUpperCase()}`;
+      const observacionValue = req.body[observacion];
+      const status = `STATUS${req.params.nombre.toUpperCase()}`;
+      const statusValue = req.body[status];
+  
+      conn.query('INSERT INTO ?? (??, ??, ??, ??, ??) VALUES (?, ?, ?, ?, ?)', [req.params.nombre, titulo, descripcion, almacenamiento, status,observacion , tituloValue,descripcionValue,almacenamientoValue, statusValue, observacionValue], (err, rows) => {
+        if (err) return res.json(err)
+        res.json({ message: 'El registro ha sido creado.' });
+      });
+    });
+  });
   routes.post('/estado/:id', (req, res) => {
     req.getConnection((err, conn) => {
       if (err) return res.json(err);
@@ -224,6 +245,100 @@ routes.get('/', (req, res) => {
       });
     });
   });
+
+  routes.post('/CreateDataEjercicio', (req, res) => {
+    req.getConnection((err, conn) => {
+      if (err) return res.json(err);
+  
+      const data = req.body; // Obtener los datos del cuerpo de la solicitud
+  
+      // Definir las columnas y los valores correspondientes
+      const columns = [
+        'IDMULTIMEDIA',
+        'IDTIPOEJERCICIO',
+        'IDNIVELDIFICULTADEJERCICIO',
+        'IDENTRENADOR',
+        'IDOBJETIVOMUSCULAR',
+        'NOMBREEJERCICIO',
+        'DESCRIPCIONEJERCICIO',
+        'INTRUCCIONESEJERCICIO',
+        'PESOLEVANTADOEJERCICIO',
+        'REPETICIONESEJERCICIO',
+        'TIEMPOREALIZACIONEJERCICIO',
+        'SERIESEJERCICIO',
+        'VARIACIONESMODIFICACIONEJERCICIOPROGRESO',
+        'OBSERVACIONESEJERCICIO',
+        'FECHACREACIONEJERCICIO',
+        'USUARIOCREACIONEJERCICIO',
+        'ESTADOEJERCICIO'
+      ];
+  
+      const values = [
+        data.IDMULTIMEDIA,
+        data.IDTIPOEJERCICIO,
+        data.IDNIVELDIFICULTADEJERCICIO,
+        data.IDENTRENADOR,
+        data.IDOBJETIVOMUSCULAR,
+        data.NOMBREEJERCICIO,
+        data.DESCRIPCIONEJERCICIO,
+        data.INTRUCCIONESEJERCICIO,
+        data.PESOLEVANTADOEJERCICIO,
+        data.REPETICIONESEJERCICIO,
+        data.TIEMPOREALIZACIONEJERCICIO,
+        data.SERIESEJERCICIO,
+        data.VARIACIONESMODIFICACIONEJERCICIOPROGRESO,
+        data.OBSERVACIONESEJERCICIO,
+        new Date(),
+        data.USUARIOCREACIONEJERCICIO,
+        data.ESTADOEJERCICIO
+      ];
+  
+      conn.query('INSERT INTO ejercicio (' + columns.join(',') + ') VALUES ?', [[values]], (err, rows) => {
+        if (err) {
+          return res.status(500).json({ error: 'Error al actualizar Datos' + err });
+        }
+        res.json({ message: 'Datos actualizados correctamente' });
+      });
+    });
+  });
+  
+  routes.post('/UpdateDataEjercicio', (req, res) => {
+    req.getConnection((err, conn) => {
+      if (err) return res.json(err);
+  
+      const data = req.body; // Obtener los datos del cuerpo de la solicitud
+  
+      // Definir los valores a actualizar
+      const values = [
+        data.IDMULTIMEDIA,
+        data.IDTIPOEJERCICIO,
+        data.IDNIVELDIFICULTADEJERCICIO,
+        data.IDENTRENADOR,
+        data.IDOBJETIVOMUSCULAR,
+        data.NOMBREEJERCICIO,
+        data.DESCRIPCIONEJERCICIO,
+        data.INTRUCCIONESEJERCICIO,
+        data.PESOLEVANTADOEJERCICIO,
+        data.REPETICIONESEJERCICIO,
+        data.TIEMPOREALIZACIONEJERCICIO,
+        data.SERIESEJERCICIO,
+        data.VARIACIONESMODIFICACIONEJERCICIOPROGRESO,
+        data.OBSERVACIONESEJERCICIO,
+        new Date(),
+        data.USUARIOMODIFICAICONEJERCICIO,
+        data.ESTADOEJERCICIO,
+        data.IDEJERCICIO // ID del ejercicio que se va a actualizar
+      ];
+  
+      conn.query('UPDATE ejercicio SET IDMULTIMEDIA = ?, IDTIPOEJERCICIO = ?, IDNIVELDIFICULTADEJERCICIO = ?, IDENTRENADOR = ?, IDOBJETIVOMUSCULAR = ?, NOMBREEJERCICIO = ?, DESCRIPCIONEJERCICIO = ?, INTRUCCIONESEJERCICIO = ?, PESOLEVANTADOEJERCICIO = ?, REPETICIONESEJERCICIO = ?, TIEMPOREALIZACIONEJERCICIO = ?, SERIESEJERCICIO = ?, VARIACIONESMODIFICACIONEJERCICIOPROGRESO = ?, OBSERVACIONESEJERCICIO = ?, FECHAMODIFICACIONEJERCICIO = ?, USUARIOMODIFICAICONEJERCICIO = ?, ESTADOEJERCICIO = ? WHERE IDEJERCICIO = ?', values, (err, rows) => {
+        if (err) {
+          return res.status(500).json({ error: 'Error al actualizar los datos: ' + err });
+        }
+        res.json({ message: 'Datos actualizados correctamente' });
+      });
+    });
+  });
+  
 
   routes.post('/subir-archivo', (req, res) => {
     if (!req.files || Object.keys(req.files).length === 0) {
@@ -244,6 +359,22 @@ routes.get('/', (req, res) => {
   });
   
   
+  routes.post('/subir-imagen', (req, res) => {
+    if (!req.files || Object.keys(req.files).length === 0) {
+      return res.status(400).json({ error: 'No se ha seleccionado ningún archivo' });
+    }
   
+    const file = req.files.file;
+  
+    // Mueve el archivo al directorio deseado
+    const filePath = './multimedia/' + file.name;
+    file.mv(filePath, error => {
+      if (error) {
+        return res.status(500).json({ error: 'Error al subir el archivo' });
+      }
+  
+      res.json({ message: 'Captura subido correctamente', filePath });
+    });
+  });
   
 module.exports = routes;

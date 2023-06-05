@@ -131,6 +131,25 @@ routes.get('/', (req, res) => {
       });
     });
   });
+
+  routes.get('/obtenerComentariosporEjercicio/:idEjercicio', (req, res) => {
+    req.getConnection((err, conn) => {
+      if (err) return res.send(err);
+  
+      conn.query(`
+      SELECT p.IDEJERCICIO, p.IDUSUARIO, p.IDPROGRESO, p.FECHAREGISTROPROGRESO, p.STATUSPROGRESO,
+      p.OBSERVACIONPROGRESO, p.METAALCANZADAPROGRESO, p.CALIFICACIONPROGRESO, pr.NICKNAMEPERSONA
+      FROM progreso p
+      JOIN usuario u ON p.IDUSUARIO = u.IDUSUARIO
+      JOIN persona pr ON u.IDPERSONA = pr.IDPERSONA
+      WHERE p.IDEJERCICIO=?;
+      `,[req.params.idEjercicio], (err, rows) => {
+        if (err) return res.send(err);
+        res.json(rows);
+      });
+    });
+  });
+
   routes.post('/chanceActivacion/:nombre', (req, res) => {
     req.getConnection((err, conn) => {
       if (err) return res.json(err);

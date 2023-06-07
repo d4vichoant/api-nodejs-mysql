@@ -1,6 +1,7 @@
 const express = require('express');
 const routes = express.Router();
 const fileUpload = require('express-fileupload');
+const Jimp = require('jimp');
 
 routes.use(fileUpload());
 
@@ -31,7 +32,7 @@ routes.get('/', (req, res) => {
     req.getConnection((err, conn) => {
       if (err) return res.send(err);
   
-      conn.query('SELECT * FROM `equiporequerido` ORDER BY `tituloequiporequerido`', (err, rows) => {
+      conn.query('SELECT * FROM `equiporequerido` ORDER BY `NOMBREEQUIPOREQUERIDO`', (err, rows) => {
         if (err) return res.send(err);
   
         res.json(rows);
@@ -88,13 +89,18 @@ routes.get('/', (req, res) => {
       if (err) return res.send(err);
   
       conn.query(`
-      SELECT e.IDEJERCICIO, e.IDMULTIMEDIA, m.TITULOMULTIMEDIA, m.DESCRIPCIONMULTIMEDIA, m.ALMACENAMIENTOMULTIMEDIA, m.OBSERVACIONMULTIMEDIA, e.IDTIPOEJERCICIO, t.NOMBRETIPOEJERCICIO, e.IDNIVELDIFICULTADEJERCICIO,n.tituloniveldificultadejercicio , e.IDENTRENADOR, e.IDOBJETIVOMUSCULAR, e.NOMBREEJERCICIO, e.DESCRIPCIONEJERCICIO, e.INTRUCCIONESEJERCICIO, e.PESOLEVANTADOEJERCICIO, e.REPETICIONESEJERCICIO, e.TIEMPOREALIZACIONEJERCICIO, e.SERIESEJERCICIO, e.VARIACIONESMODIFICACIONEJERCICIOPROGRESO, e.OBSERVACIONESEJERCICIO, e.FECHACREACIONEJERCICIO, e.FECHAMODIFICACIONEJERCICIO, e.USUARIOCREACIONEJERCICIO, e.USUARIOMODIFICAICONEJERCICIO, e.ESTADOEJERCICIO
+      SELECT e.IDEJERCICIO, e.IDMULTIMEDIA, m.TITULOMULTIMEDIA, m.DESCRIPCIONMULTIMEDIA, m.ALMACENAMIENTOMULTIMEDIA, m.OBSERVACIONMULTIMEDIA, e.IDTIPOEJERCICIO, t.NOMBRETIPOEJERCICIO, e.IDNIVELDIFICULTADEJERCICIO, n.tituloniveldificultadejercicio, e.IDENTRENADOR, e.IDOBJETIVOMUSCULAR, e.NOMBREEJERCICIO, e.DESCRIPCIONEJERCICIO, e.INTRUCCIONESEJERCICIO, e.PESOLEVANTADOEJERCICIO, e.REPETICIONESEJERCICIO, e.TIEMPOREALIZACIONEJERCICIO, e.SERIESEJERCICIO, e.VARIACIONESMODIFICACIONEJERCICIOPROGRESO, e.OBSERVACIONESEJERCICIO, e.FECHACREACIONEJERCICIO, e.FECHAMODIFICACIONEJERCICIO, e.USUARIOCREACIONEJERCICIO, e.USUARIOMODIFICAICONEJERCICIO, e.ESTADOEJERCICIO,
+      GROUP_CONCAT(DISTINCT er.IDEQUIPOREQUERIDO) AS ID_EQUIPOS_REQUERIDOS,
+      GROUP_CONCAT(DISTINCT er.NOMBREEQUIPOREQUERIDO) AS TITULOS_EQUIPOS_REQUERIDOS
       FROM ejercicio AS e
       JOIN tipoejercicio AS t ON e.IDTIPOEJERCICIO = t.IDTIPOEJERCICIO
       JOIN niveldificultadejercicio AS n ON e.IDNIVELDIFICULTADEJERCICIO = n.IDNIVELDIFICULTADEJERCICIO
       JOIN multimedia AS m ON e.IDMULTIMEDIA = m.IDMULTIMEDIA
-      WHERE 1;
-      `, (err, rows) => {
+      LEFT JOIN equiporequeridoejercicio AS ere ON e.IDEJERCICIO = ere.IDEJERCICIO
+      LEFT JOIN equiporequerido AS er ON ere.IDEQUIPOREQUERIDO = er.IDEQUIPOREQUERIDO
+      WHERE 1
+      GROUP BY e.IDEJERCICIO;
+    `, (err, rows) => {
         if (err) return res.send(err);
   
         res.json(rows);
@@ -248,6 +254,47 @@ routes.get('/', (req, res) => {
       });
     });
   });
+
+  routes.post('/UpdateDataERequerido/:nombre', (req, res) => {
+    req.getConnection((err, conn) => {
+      if (err) return res.json(err);
+      const nombre = `NOMBRE${req.params.nombre.toUpperCase()}`;
+      const nombreValue = req.body[nombre];
+      const imagen = `IMAGEN${req.params.nombre.toUpperCase()}`;
+      const imagenValue = req.body[imagen]; // Corregir aquí
+      const status = `STATUS${req.params.nombre.toUpperCase()}`;
+      const statusValue = req.body[status];
+      const id = `ID${req.params.nombre.toUpperCase()}`;
+      const idValue = req.body[id];
+  
+      conn.query('UPDATE ?? SET ?? = ?, ?? = ?, ?? = ? WHERE ?? = ?', [req.params.nombre, nombre, nombreValue, imagen, imagenValue, status, statusValue, id, idValue], (err, rows) => {
+        if (err) return res.json(err)
+        res.json({ message: 'Los Datos han sido actualizada correctamente' });
+      });
+    });
+  });
+  
+  routes.post('/CreateDataERequerido/:nombre', (req, res) => {
+    req.getConnection((err, conn) => {
+      if (err) return res.json(err);
+      const nombre = `NOMBRE${req.params.nombre.toUpperCase()}`;
+      const nombreValue = req.body[nombre];
+      const observacion = `OBSERVACIONE${req.params.nombre.toUpperCase()}`;
+      const observacionValue = req.body[observacion];
+      const imagen = `IMAGEN${req.params.nombre.toUpperCase()}`;
+      const imagenValue = req.body[imagen];
+      const status = `STATUS${req.params.nombre.toUpperCase()}`;
+      const statusValue = req.body[status];
+
+  
+      conn.query('INSERT INTO ?? ( ??, ??, ??, ??) VALUES ( ?, ?, ?, ?)', [req.params.nombre, nombre, observacion, imagen, status, nombreValue,observacionValue,imagenValue, statusValue], (err, rows) => {
+        if (err) return res.json(err)
+        res.json({ message: 'El registro ha sido creado exitosamente.' });
+      });
+    });
+  });
+  
+
   routes.post('/estado/:id', (req, res) => {
     req.getConnection((err, conn) => {
       if (err) return res.json(err);
@@ -377,6 +424,27 @@ routes.get('/', (req, res) => {
     });
   });
   
+    
+  routes.post('/subir-imagen-erequerido', async (req, res) => {
+    if (!req.files || Object.keys(req.files).length === 0) {
+      return res.status(400).json({ error: 'No se ha seleccionado ningún archivo' });
+    }
+  
+    const file = req.files.file;
+  
+    // Mueve el archivo al directorio deseado
+    const filePath = './media/equipoRequerido/' + file.name;
+  
+    try {
+      const image = await Jimp.read(file.data);
+      await image.resize(400, Jimp.AUTO);
+      await image.writeAsync(filePath);
+  
+      res.json({ message: 'Imagen subida correctamente', filePath });
+    } catch (error) {
+      res.status(500).json({ error: 'Error al subir el archivo' });
+    }
+  });
   
   routes.post('/subir-imagen', (req, res) => {
     if (!req.files || Object.keys(req.files).length === 0) {

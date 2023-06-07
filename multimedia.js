@@ -3,6 +3,9 @@ const routes = express.Router();
 const fileUpload = require('express-fileupload');
 const Jimp = require('jimp');
 
+const fs = require('fs');
+const path = require('path');
+
 routes.use(fileUpload());
 
 routes.get('/', (req, res) => {
@@ -21,6 +24,17 @@ routes.get('/', (req, res) => {
       if (err) return res.send(err);
   
       conn.query('SELECT * FROM `multimedia` WHERE STATUSMULTIMEDIA = 1 ORDER BY 1', (err, rows) => {
+        if (err) return res.send(err);
+  
+        res.json(rows);
+      });
+    });
+  });
+  routes.get('/equiporequeridoActivate', (req, res) => {
+    req.getConnection((err, conn) => {
+      if (err) return res.send(err);
+  
+      conn.query('SELECT * FROM `equiporequerido`  WHERE STATUSEQUIPOREQUERIDO = 1 ORDER BY `NOMBREEQUIPOREQUERIDO`', (err, rows) => {
         if (err) return res.send(err);
   
         res.json(rows);
@@ -90,7 +104,7 @@ routes.get('/', (req, res) => {
   
       conn.query(`
       SELECT e.IDEJERCICIO, e.IDMULTIMEDIA, m.TITULOMULTIMEDIA, m.DESCRIPCIONMULTIMEDIA, m.ALMACENAMIENTOMULTIMEDIA, m.OBSERVACIONMULTIMEDIA, e.IDTIPOEJERCICIO, t.NOMBRETIPOEJERCICIO, e.IDNIVELDIFICULTADEJERCICIO, n.tituloniveldificultadejercicio, e.IDENTRENADOR, e.IDOBJETIVOMUSCULAR, e.NOMBREEJERCICIO, e.DESCRIPCIONEJERCICIO, e.INTRUCCIONESEJERCICIO, e.PESOLEVANTADOEJERCICIO, e.REPETICIONESEJERCICIO, e.TIEMPOREALIZACIONEJERCICIO, e.SERIESEJERCICIO, e.VARIACIONESMODIFICACIONEJERCICIOPROGRESO, e.OBSERVACIONESEJERCICIO, e.FECHACREACIONEJERCICIO, e.FECHAMODIFICACIONEJERCICIO, e.USUARIOCREACIONEJERCICIO, e.USUARIOMODIFICAICONEJERCICIO, e.ESTADOEJERCICIO,
-      GROUP_CONCAT(DISTINCT er.IDEQUIPOREQUERIDO) AS ID_EQUIPOS_REQUERIDOS,
+      GROUP_CONCAT(DISTINCT er.IDEQUIPOREQUERIDO ) AS ID_EQUIPOS_REQUERIDOS,
       GROUP_CONCAT(DISTINCT er.NOMBREEQUIPOREQUERIDO) AS TITULOS_EQUIPOS_REQUERIDOS
       FROM ejercicio AS e
       JOIN tipoejercicio AS t ON e.IDTIPOEJERCICIO = t.IDTIPOEJERCICIO
@@ -279,7 +293,7 @@ routes.get('/', (req, res) => {
       if (err) return res.json(err);
       const nombre = `NOMBRE${req.params.nombre.toUpperCase()}`;
       const nombreValue = req.body[nombre];
-      const observacion = `OBSERVACIONE${req.params.nombre.toUpperCase()}`;
+      const observacion = `OBSERVACION${req.params.nombre.toUpperCase()}`;
       const observacionValue = req.body[observacion];
       const imagen = `IMAGEN${req.params.nombre.toUpperCase()}`;
       const imagenValue = req.body[imagen];
@@ -363,7 +377,17 @@ routes.get('/', (req, res) => {
         if (err) {
           return res.status(500).json({ error: 'Error al actualizar Datos' + err });
         }
+        const ejercicioId = rows.insertId; 
+
+        const idsArray = data.ID_EQUIPOS_REQUERIDOS.split(',').map(id => [ejercicioId, parseInt(id)]);
+      
+          conn.query('INSERT INTO equiporequeridoejercicio (IDEJERCICIO , IDEQUIPOREQUERIDO ) VALUES ?', [idsArray], (err, result) => {
+          if (err) {
+            return res.status(500).json({ error: 'Error al insertar en otra tabla' + err });
+          }
+
         res.json({ message: 'Datos actualizados correctamente' });
+      });
       });
     });
   });
@@ -400,7 +424,20 @@ routes.get('/', (req, res) => {
         if (err) {
           return res.status(500).json({ error: 'Error al actualizar los datos: ' + err });
         }
+        conn.query('DELETE FROM equiporequeridoejercicio WHERE IDEJERCICIO = ?', [data.IDEJERCICIO], (err, result) => {
+          if (err) {
+            return res.status(500).json({ error: 'Error al eliminar registros relacionados' + err });
+          }
+
+          const idsArray = data.ID_EQUIPOS_REQUERIDOS.split(',').map(id => [data.IDEJERCICIO, parseInt(id)]);
+          conn.query('INSERT INTO equiporequeridoejercicio (IDEJERCICIO , IDEQUIPOREQUERIDO ) VALUES ?', [idsArray], (err, result) => {
+            if (err) {
+              return res.status(500).json({ error: 'Error al insertar en otra tabla' + err });
+            }
+
         res.json({ message: 'Datos actualizados correctamente' });
+        });
+      });
       });
     });
   });
@@ -412,17 +449,29 @@ routes.get('/', (req, res) => {
     }
   
     const file = req.files.file;
+    const fileName = file.name.replace(/\.[^/.]+$/, ""); // Eliminar la extensión del nombre de archivo
+  
+    // Verificar si el nombre de archivo ya existe
+    const ext = path.extname(file.name);
+    let newFileName = fileName;
+    let counter = 1;
+    while (fs.existsSync(`./multimedia/${newFileName}${ext}`)) {
+      newFileName = `${fileName}_${counter}`;
+      counter++;
+    }
   
     // Mueve el archivo al directorio deseado
-    const filePath = './multimedia/' + file.name;
+    const filePath = `./multimedia/${newFileName}${ext}`;
+    
     file.mv(filePath, error => {
       if (error) {
         return res.status(500).json({ error: 'Error al subir el archivo' });
       }
   
-      res.json({ message: 'Archivo subido correctamente', filePath });
+      res.json({ message: 'Archivo subido correctamente', fileName: newFileName });
     });
   });
+  
   
     
   routes.post('/subir-imagen-erequerido', async (req, res) => {
@@ -431,16 +480,24 @@ routes.get('/', (req, res) => {
     }
   
     const file = req.files.file;
+    const ext = path.extname(file.name);
+    const fileName = file.name.replace(/\.[^/.]+$/, ""); // Eliminar la extensión del nombre de archivo
+    // Verificar si el nombre de archivo ya existe
+    let newFileName = fileName;
+    let counter = 1;
+    while (fs.existsSync(`./media/equipoRequerido/${newFileName}${ext}`)) {
+      newFileName = `${fileName}_${counter}`;
+      counter++;
+    }
   
     // Mueve el archivo al directorio deseado
-    const filePath = './media/equipoRequerido/' + file.name;
+    const filePath = `./media/equipoRequerido/${newFileName}${ext}`;
   
     try {
       const image = await Jimp.read(file.data);
       await image.resize(400, Jimp.AUTO);
       await image.writeAsync(filePath);
-  
-      res.json({ message: 'Imagen subida correctamente', filePath });
+      res.json({ message: 'Imagen subida correctamente', fileNameNew: newFileName });
     } catch (error) {
       res.status(500).json({ error: 'Error al subir el archivo' });
     }
@@ -452,16 +509,28 @@ routes.get('/', (req, res) => {
     }
   
     const file = req.files.file;
+    const fileName = file.name.replace(/\.[^/.]+$/, ""); // Eliminar la extensión del nombre de archivo
+  
+    // Verificar si el nombre de archivo ya existe
+    const ext = path.extname(file.name);
+    let newFileName = fileName;
+    let counter = 1;
+    while (fs.existsSync(`./multimedia/${newFileName}${ext}`)) {
+      newFileName = `${fileName}_${counter}`;
+      counter++;
+    }
   
     // Mueve el archivo al directorio deseado
-    const filePath = './multimedia/' + file.name;
+    const filePath = `./multimedia/${newFileName}${ext}`;
+    
     file.mv(filePath, error => {
       if (error) {
         return res.status(500).json({ error: 'Error al subir el archivo' });
       }
   
-      res.json({ message: 'Captura subido correctamente', filePath });
+      res.json({ message: 'Captura subida correctamente', fileName: newFileName });
     });
   });
+  
   
 module.exports = routes;

@@ -19,6 +19,11 @@ const dbOptions ={
     user: 'root',
     password: '',
     database: 'homefitgo'
+    // host: 'mysql-129773-0.cloudclusters.net',
+    // port: 12074,
+    // user: 'admin',
+    // password: 'RnmuDaPN',
+    // database: 'homefitgo'
 }
 
 // Agregar middleware para permitir CORS

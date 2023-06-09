@@ -121,6 +121,31 @@ routes.get('/', (req, res) => {
       });
     });
   });
+
+  routes.get('/ejercicioActivate', (req, res) => {
+    req.getConnection((err, conn) => {
+      if (err) return res.send(err);
+  
+      conn.query(`
+      SELECT e.IDEJERCICIO, m.ALMACENAMIENTOMULTIMEDIA, t.NOMBRETIPOEJERCICIO, n.tituloniveldificultadejercicio, e.IDENTRENADOR, e.IDOBJETIVOMUSCULAR, o.NOMBREOBJETIVOSMUSCULARES,e.NOMBREEJERCICIO, e.PESOLEVANTADOEJERCICIO, e.REPETICIONESEJERCICIO, e.TIEMPOREALIZACIONEJERCICIO, e.SERIESEJERCICIO, 
+      GROUP_CONCAT(DISTINCT er.NOMBREEQUIPOREQUERIDO) AS TITULOS_EQUIPOS_REQUERIDOS
+      FROM ejercicio AS e
+      JOIN objetivosmusculares AS o ON e.IDOBJETIVOMUSCULAR = o.IDOBJETIVOSMUSCULARES
+      JOIN tipoejercicio AS t ON e.IDTIPOEJERCICIO = t.IDTIPOEJERCICIO
+      JOIN niveldificultadejercicio AS n ON e.IDNIVELDIFICULTADEJERCICIO = n.IDNIVELDIFICULTADEJERCICIO
+      JOIN multimedia AS m ON e.IDMULTIMEDIA = m.IDMULTIMEDIA
+      LEFT JOIN equiporequeridoejercicio AS ere ON e.IDEJERCICIO = ere.IDEJERCICIO
+      LEFT JOIN equiporequerido AS er ON ere.IDEQUIPOREQUERIDO = er.IDEQUIPOREQUERIDO
+      WHERE e.ESTADOEJERCICIO=1
+      GROUP BY e.IDEJERCICIO;
+    `, (err, rows) => {
+        if (err) return res.send(err);
+  
+        res.json(rows);
+      });
+    });
+  });
+
   routes.get('/preejercicio', (req, res) => {
     req.getConnection((err, conn) => {
       if (err) return res.send(err);
@@ -379,15 +404,16 @@ routes.get('/', (req, res) => {
         }
         const ejercicioId = rows.insertId; 
 
-        const idsArray = data.ID_EQUIPOS_REQUERIDOS.split(',').map(id => [ejercicioId, parseInt(id)]);
-      
+        if(data.ID_EQUIPOS_REQUERIDOS){
           conn.query('INSERT INTO equiporequeridoejercicio (IDEJERCICIO , IDEQUIPOREQUERIDO ) VALUES ?', [idsArray], (err, result) => {
-          if (err) {
-            return res.status(500).json({ error: 'Error al insertar en otra tabla' + err });
-          }
-
-        res.json({ message: 'Datos actualizados correctamente' });
-      });
+            if (err) {
+              return res.status(500).json({ error: 'Error al insertar en otra tabla' + err });
+            }
+            res.json({ message: 'Datos creados correctamente' });
+          });
+        }else{
+          res.json({ message: 'Datos creados correctamente' });
+        }
       });
     });
   });
@@ -429,14 +455,17 @@ routes.get('/', (req, res) => {
             return res.status(500).json({ error: 'Error al eliminar registros relacionados' + err });
           }
 
-          const idsArray = data.ID_EQUIPOS_REQUERIDOS.split(',').map(id => [data.IDEJERCICIO, parseInt(id)]);
+          if(data.ID_EQUIPOS_REQUERIDOS){
+            const idsArray = data.ID_EQUIPOS_REQUERIDOS.split(',').map(id => [data.IDEJERCICIO, parseInt(id)]);
           conn.query('INSERT INTO equiporequeridoejercicio (IDEJERCICIO , IDEQUIPOREQUERIDO ) VALUES ?', [idsArray], (err, result) => {
             if (err) {
               return res.status(500).json({ error: 'Error al insertar en otra tabla' + err });
             }
-
-        res.json({ message: 'Datos actualizados correctamente' });
-        });
+            res.json({ message: 'Datos actualizados correctamente' });
+            });
+          }else{
+            res.json({ message: 'Datos actualizados correctamente' });
+          }
       });
       });
     });
@@ -495,15 +524,14 @@ routes.get('/', (req, res) => {
   
     try {
       const image = await Jimp.read(file.data);
-      await image.resize(400, Jimp.AUTO);
+      await image.resize(100, Jimp.AUTO);
       await image.writeAsync(filePath);
       res.json({ message: 'Imagen subida correctamente', fileNameNew: newFileName });
     } catch (error) {
       res.status(500).json({ error: 'Error al subir el archivo' });
     }
   });
-  
-  routes.post('/subir-imagen', (req, res) => {
+  routes.post('/subir-imagen', async (req, res) => {
     if (!req.files || Object.keys(req.files).length === 0) {
       return res.status(400).json({ error: 'No se ha seleccionado ningún archivo' });
     }
@@ -522,15 +550,44 @@ routes.get('/', (req, res) => {
   
     // Mueve el archivo al directorio deseado
     const filePath = `./multimedia/${newFileName}${ext}`;
-    
-    file.mv(filePath, error => {
-      if (error) {
-        return res.status(500).json({ error: 'Error al subir el archivo' });
-      }
   
-      res.json({ message: 'Captura subida correctamente', fileName: newFileName });
-    });
+    try {
+      const image = await Jimp.read(file.data);
+      await image.resize(500, Jimp.AUTO);
+      await image.writeAsync(filePath);
+      res.json({ message: 'Imagen subida correctamente', fileName: newFileName });
+    } catch (error) {
+      res.status(500).json({ error: 'Error al subir el archivo' });
+    }
   });
+  // routes.post('/subir-imagen', (req, res) => {
+  //   if (!req.files || Object.keys(req.files).length === 0) {
+  //     return res.status(400).json({ error: 'No se ha seleccionado ningún archivo' });
+  //   }
+  
+  //   const file = req.files.file;
+  //   const fileName = file.name.replace(/\.[^/.]+$/, ""); // Eliminar la extensión del nombre de archivo
+  
+  //   // Verificar si el nombre de archivo ya existe
+  //   const ext = path.extname(file.name);
+  //   let newFileName = fileName;
+  //   let counter = 1;
+  //   while (fs.existsSync(`./multimedia/${newFileName}${ext}`)) {
+  //     newFileName = `${fileName}_${counter}`;
+  //     counter++;
+  //   }
+  
+  //   // Mueve el archivo al directorio deseado
+  //   const filePath = `./multimedia/${newFileName}${ext}`;
+    
+  //   file.mv(filePath, error => {
+  //     if (error) {
+  //       return res.status(500).json({ error: 'Error al subir el archivo' });
+  //     }
+  
+  //     res.json({ message: 'Captura subida correctamente', fileName: newFileName });
+  //   });
+  // });
   
   
 module.exports = routes;

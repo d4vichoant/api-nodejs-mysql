@@ -6,24 +6,26 @@ const myconn = require('express-myconnection')
 const routesprofile = require('./profiles')
 const routesmanager =require('./manager')
 const routesmultimedia =require('./multimedia')
+const routesprogramacion =require('./programacion')
+
 
 const app = express()
 const cors = require('cors');
 
 const secretKey = process.env.SECRET_KEY;
 
-app.set('port', process.env.PORT || 8080)
+app.set('port', process.env.PORT || 9600)
 const dbOptions ={
+    // host: 'localhost',
+    // port: 3306,
+    // user: 'root',
+    // password: '',
+    // database: 'homefitgo'
     host: 'mysql-131027-0.cloudclusters.net',
     port: 10212,
     user: 'admin',
     password: 'e3O4qtg4',
     database: 'homefitgo'
-    // host: 'mysql-129773-0.cloudclusters.net',
-    // port: 12074,
-    // user: 'admin',
-    // password: 'RnmuDaPN',
-    // database: 'homefitgo'
 }
 
 // Agregar middleware para permitir CORS
@@ -60,6 +62,7 @@ app.get('/protectedtoken', (req, res) => {
 app.use('/profiles',routesprofile)
 app.use('/manager',routesmanager)
 app.use('/multimedia',routesmultimedia)
+app.use('/programacion',routesprogramacion)
 
 //server running -----------------
 app.listen(app.get('port'),()=>{

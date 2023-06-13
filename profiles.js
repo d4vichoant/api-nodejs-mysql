@@ -5,9 +5,14 @@ const fileUpload = require('express-fileupload');
 const jwt = require('jsonwebtoken');
 const secretKey = process.env.SECRET_KEY;
 const cors = require('cors');
+const Jimp = require('jimp');
+
+const fs = require('fs');
+const path = require('path');
 // Middlewares
 routes.use(cors());
 routes.use(fileUpload());
+
 
 routes.get('/', (req, res) => {
   req.getConnection((err, conn) => {
@@ -25,7 +30,7 @@ routes.get('/frecuenciaejercicio',(req,res)=>{
   req.getConnection((err,conn)=>{
       if(err) return res.send(err)
       conn.query('SELECT * FROM frecuenciaejercicio',(err,rows)=>{
-          if(err) return res.send(err)
+          if(err) return res.json(err)
           res.json(rows)
       })
   })
@@ -88,6 +93,7 @@ routes.get('/objetivospersonales',(req,res)=>{
       })
   })
 })
+
 routes.post('/guardarDatos', (req, res) => {
 
   // Iniciar la transacción
@@ -493,6 +499,62 @@ routes.post('/updateEntrenador', (req, res) => {
   });
 });
 
+const MAX_FILE_SIZE_MB = 1; // Tamaño máximo permitido en MB
+const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024; // Convertir a bytes
+const TARGET_WIDTH = 100; // Ancho deseado en píxeles
+
+routes.post('/subir-imagen-perfile', async (req, res) => {
+  //console.log("hola");
+  if (!req.files || Object.keys(req.files).length === 0) {
+    return res.status(400).json({ error: 'No se ha seleccionado ningún archivo' });
+  }
+
+  const file = req.files.file;
+  const fileSizeBytes = file.size;
+
+  if (fileSizeBytes > MAX_FILE_SIZE_BYTES) {
+    return res.status(400).json({ error: 'El tamaño de la imagen debe ser menor a 1 MB' });
+  }
+
+  const fileName = file.name.replace(/\.[^/.]+$/, ""); // Eliminar la extensión del nombre de archivo
+  const ext = path.extname(file.name);
+  let newFileName = fileName;
+  let counter = 1;
+
+  // Verificar si el nombre de archivo ya existe
+  while (fs.existsSync(`./media/perfile/${newFileName}${ext}`)) {
+    newFileName = `${fileName}_${counter}`;
+    counter++;
+  }
+
+  // Mueve el archivo al directorio deseado
+  const filePath = `./media/perfile/${newFileName}${ext}`;
+
+  try {
+    const image = await Jimp.read(file.data);
+
+    // Redimensionar manteniendo el aspecto y ajustar la calidad para reducir el tamaño
+    const resizedImage = image.resize(TARGET_WIDTH, Jimp.AUTO).quality(70);
+
+    await resizedImage.writeAsync(filePath);
+    res.json({ message: 'Imagen subida correctamente', fileName: newFileName });
+  } catch (error) {
+    res.status(500).json({ error: 'Error al subir el archivo' + error });
+  }
+});
+
+
+
+
+routes.post('/uploadImagenPerfileText/', (req, res) => {
+  req.getConnection((err, conn) => {
+    if (err) return res.json(err);
+    conn.query('UPDATE persona SET IMAGEPERSONA = ? WHERE IDPERSONA = ?', [req.body.IMAGEPERSONA,req.body.IDPERSONA.IDPERSONA], (err,rows)=>{
+      if(err) return res.json(err)
+      res.json({ message: 'La foto de Perfil ha sido actualizado.' });
+  }) 
+  });
+});
 
 
 routes.post('/subir-archivo', (req, res) => {
@@ -517,11 +579,12 @@ routes.post('/subir-archivo', (req, res) => {
 routes.post('/:nickname', (req, res) => {
   req.getConnection((err, conn) => {
     if (err) return res.send(err);
-    conn.query('SELECT `IDPERSONA`, `IDGENERO`, `IDROLUSUARIO`, `NOMBREPERSONA`, `APELLDOPERSONA`, `CORREOPERSONA`, `NICKNAMEPERSONA`, `FECHANACIMIENTOPERSONA` FROM `persona` WHERE NICKNAMEPERSONA = ? AND ESTADOPERSONA = true LIMIT 1', [req.params.nickname], (err, rows) => {
+    conn.query('SELECT `IDPERSONA`, `IDGENERO`, `IDROLUSUARIO`, `NOMBREPERSONA`, `APELLDOPERSONA`, `CORREOPERSONA`, `NICKNAMEPERSONA`, `IMAGEPERSONA`,`FECHANACIMIENTOPERSONA` FROM `persona` WHERE NICKNAMEPERSONA = ? AND ESTADOPERSONA = true LIMIT 1', [req.params.nickname], (err, rows) => {
       if (err) return res.json(err);
       res.json(rows);
     });
   });
 });
+
 
 module.exports = routes

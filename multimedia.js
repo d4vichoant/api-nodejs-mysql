@@ -103,7 +103,7 @@ routes.get('/', (req, res) => {
       if (err) return res.send(err);
   
       conn.query(`
-      SELECT e.IDEJERCICIO, e.IDMULTIMEDIA, m.TITULOMULTIMEDIA, m.DESCRIPCIONMULTIMEDIA, m.ALMACENAMIENTOMULTIMEDIA, m.OBSERVACIONMULTIMEDIA, e.IDTIPOEJERCICIO, t.NOMBRETIPOEJERCICIO, e.IDNIVELDIFICULTADEJERCICIO, n.tituloniveldificultadejercicio, e.IDENTRENADOR, e.IDOBJETIVOMUSCULAR, e.NOMBREEJERCICIO, e.DESCRIPCIONEJERCICIO, e.INTRUCCIONESEJERCICIO, e.PESOLEVANTADOEJERCICIO, e.REPETICIONESEJERCICIO, e.TIEMPOREALIZACIONEJERCICIO, e.SERIESEJERCICIO, e.VARIACIONESMODIFICACIONEJERCICIOPROGRESO, e.OBSERVACIONESEJERCICIO, e.FECHACREACIONEJERCICIO, e.FECHAMODIFICACIONEJERCICIO, e.USUARIOCREACIONEJERCICIO, e.USUARIOMODIFICAICONEJERCICIO, e.ESTADOEJERCICIO,
+      SELECT e.IDEJERCICIO, e.IDMULTIMEDIA, m.TITULOMULTIMEDIA, m.DESCRIPCIONMULTIMEDIA,m.TIEMPOMULTIMEDIA, m.ALMACENAMIENTOMULTIMEDIA, m.OBSERVACIONMULTIMEDIA, e.IDTIPOEJERCICIO, t.NOMBRETIPOEJERCICIO, e.IDNIVELDIFICULTADEJERCICIO, n.tituloniveldificultadejercicio, e.IDENTRENADOR, e.IDOBJETIVOMUSCULAR, e.NOMBREEJERCICIO, e.DESCRIPCIONEJERCICIO, e.INTRUCCIONESEJERCICIO, e.PESOLEVANTADOEJERCICIO, e.REPETICIONESEJERCICIO, e.SERIESEJERCICIO, e.VARIACIONESMODIFICACIONEJERCICIOPROGRESO, e.OBSERVACIONESEJERCICIO, e.FECHACREACIONEJERCICIO, e.FECHAMODIFICACIONEJERCICIO, e.USUARIOCREACIONEJERCICIO, e.USUARIOMODIFICAICONEJERCICIO, e.ESTADOEJERCICIO,
       GROUP_CONCAT(DISTINCT er.IDEQUIPOREQUERIDO ) AS ID_EQUIPOS_REQUERIDOS,
       GROUP_CONCAT(DISTINCT er.NOMBREEQUIPOREQUERIDO) AS TITULOS_EQUIPOS_REQUERIDOS
       FROM ejercicio AS e
@@ -127,7 +127,7 @@ routes.get('/', (req, res) => {
       if (err) return res.send(err);
   
       conn.query(`
-      SELECT e.IDEJERCICIO, m.ALMACENAMIENTOMULTIMEDIA, t.NOMBRETIPOEJERCICIO, n.tituloniveldificultadejercicio, e.IDENTRENADOR, e.IDOBJETIVOMUSCULAR, o.NOMBREOBJETIVOSMUSCULARES,e.NOMBREEJERCICIO, e.PESOLEVANTADOEJERCICIO, e.REPETICIONESEJERCICIO, e.TIEMPOREALIZACIONEJERCICIO, e.SERIESEJERCICIO, 
+      SELECT e.IDEJERCICIO, m.ALMACENAMIENTOMULTIMEDIA, t.NOMBRETIPOEJERCICIO, n.tituloniveldificultadejercicio,m.TIEMPOMULTIMEDIA, e.IDENTRENADOR, e.IDOBJETIVOMUSCULAR, o.NOMBREOBJETIVOSMUSCULARES,e.NOMBREEJERCICIO, e.PESOLEVANTADOEJERCICIO, e.REPETICIONESEJERCICIO, m.TIEMPOMULTIMEDIA AS TIEMPOREALIZACIONEJERCICIO, e.SERIESEJERCICIO, 
       GROUP_CONCAT(DISTINCT er.NOMBREEQUIPOREQUERIDO) AS TITULOS_EQUIPOS_REQUERIDOS
       FROM ejercicio AS e
       JOIN objetivosmusculares AS o ON e.IDOBJETIVOMUSCULAR = o.IDOBJETIVOSMUSCULARES
@@ -210,6 +210,7 @@ routes.get('/', (req, res) => {
       });
     });
   });
+  
   routes.post('/UpdateData/:nombre', (req, res) => {
     req.getConnection((err, conn) => {
       if (err) return res.json(err);
@@ -263,10 +264,12 @@ routes.get('/', (req, res) => {
       const observacionValue = req.body[observacion];
       const status = `STATUS${req.params.nombre.toUpperCase()}`;
       const statusValue = req.body[status];
+      const tiempo = `TIEMPO${req.params.nombre.toUpperCase()}`;
+      const tiempoValue = req.body[tiempo];
       const id = `ID${req.params.nombre.toUpperCase()}`;
       const idValue = req.body[id];
   
-      conn.query('UPDATE ?? SET   ?? = ?,  ?? = ?, ?? = ?, ?? = ?, ??=? WHERE ?? = ?', [req.params.nombre, titulo, tituloValue,descripcion,descripcionValue, almacenamiento,almacenamientoValue ,status, statusValue,observacion,observacionValue, id, idValue], (err, rows) => {
+      conn.query('UPDATE ?? SET   ?? = ?,  ?? = ?, ?? = ?, ?? = ?, ?? = ?, ??=? WHERE ?? = ?', [req.params.nombre, titulo, tituloValue,descripcion,descripcionValue, almacenamiento,almacenamientoValue ,status, statusValue,observacion,observacionValue,tiempo,tiempoValue, id, idValue], (err, rows) => {
         if (err) return res.json(err)
         res.json({ message: 'Los Datos ham sido actualizado.' });
       });
@@ -286,8 +289,10 @@ routes.get('/', (req, res) => {
       const observacionValue = req.body[observacion];
       const status = `STATUS${req.params.nombre.toUpperCase()}`;
       const statusValue = req.body[status];
+      const tiempo = `TIEMPO${req.params.nombre.toUpperCase()}`;
+      const tiempoValue = req.body[tiempo];
   
-      conn.query('INSERT INTO ?? (??, ??, ??, ??, ??) VALUES (?, ?, ?, ?, ?)', [req.params.nombre, titulo, descripcion, almacenamiento, status,observacion , tituloValue,descripcionValue,almacenamientoValue, statusValue, observacionValue], (err, rows) => {
+      conn.query('INSERT INTO ?? (??, ??, ??, ??, ??, ??) VALUES (?, ?, ?, ?, ?, ?)', [req.params.nombre, titulo, descripcion, almacenamiento, status,tiempo,observacion , tituloValue,descripcionValue,almacenamientoValue, statusValue,tiempoValue, observacionValue], (err, rows) => {
         if (err) return res.json(err)
         res.json({ message: 'El registro ha sido creado.' });
       });
@@ -369,7 +374,6 @@ routes.get('/', (req, res) => {
         'INTRUCCIONESEJERCICIO',
         'PESOLEVANTADOEJERCICIO',
         'REPETICIONESEJERCICIO',
-        'TIEMPOREALIZACIONEJERCICIO',
         'SERIESEJERCICIO',
         'VARIACIONESMODIFICACIONEJERCICIOPROGRESO',
         'OBSERVACIONESEJERCICIO',
@@ -389,7 +393,6 @@ routes.get('/', (req, res) => {
         data.INTRUCCIONESEJERCICIO,
         data.PESOLEVANTADOEJERCICIO,
         data.REPETICIONESEJERCICIO,
-        data.TIEMPOREALIZACIONEJERCICIO,
         data.SERIESEJERCICIO,
         data.VARIACIONESMODIFICACIONEJERCICIOPROGRESO,
         data.OBSERVACIONESEJERCICIO,
@@ -405,25 +408,26 @@ routes.get('/', (req, res) => {
         const ejercicioId = rows.insertId; 
 
         if(data.ID_EQUIPOS_REQUERIDOS){
-          conn.query('INSERT INTO equiporequeridoejercicio (IDEJERCICIO , IDEQUIPOREQUERIDO ) VALUES ?', [idsArray], (err, result) => {
-            if (err) {
-              return res.status(500).json({ error: 'Error al insertar en otra tabla' + err });
-            }
-            res.json({ message: 'Datos creados correctamente' });
+          const idsArray = data.ID_EQUIPOS_REQUERIDOS.split(',').map(id => [ejercicioId, parseInt(id)]);
+        conn.query('INSERT INTO equiporequeridoejercicio (IDEJERCICIO , IDEQUIPOREQUERIDO ) VALUES ?', [idsArray], (err, result) => {
+          if (err) {
+            return res.status(500).json({ error: 'Error al insertar en trabla de Equipos Requeridos' + err });
+          }
+          res.json({ message: 'Datos actualizados correctamente' });
           });
         }else{
-          res.json({ message: 'Datos creados correctamente' });
+          res.json({ message: 'Datos actualizados correctamente' });
         }
       });
     });
   });
   
   routes.post('/UpdateDataEjercicio', (req, res) => {
+
     req.getConnection((err, conn) => {
       if (err) return res.json(err);
   
       const data = req.body; // Obtener los datos del cuerpo de la solicitud
-  
       // Definir los valores a actualizar
       const values = [
         data.IDMULTIMEDIA,
@@ -436,7 +440,6 @@ routes.get('/', (req, res) => {
         data.INTRUCCIONESEJERCICIO,
         data.PESOLEVANTADOEJERCICIO,
         data.REPETICIONESEJERCICIO,
-        data.TIEMPOREALIZACIONEJERCICIO,
         data.SERIESEJERCICIO,
         data.VARIACIONESMODIFICACIONEJERCICIOPROGRESO,
         data.OBSERVACIONESEJERCICIO,
@@ -446,7 +449,7 @@ routes.get('/', (req, res) => {
         data.IDEJERCICIO // ID del ejercicio que se va a actualizar
       ];
   
-      conn.query('UPDATE ejercicio SET IDMULTIMEDIA = ?, IDTIPOEJERCICIO = ?, IDNIVELDIFICULTADEJERCICIO = ?, IDENTRENADOR = ?, IDOBJETIVOMUSCULAR = ?, NOMBREEJERCICIO = ?, DESCRIPCIONEJERCICIO = ?, INTRUCCIONESEJERCICIO = ?, PESOLEVANTADOEJERCICIO = ?, REPETICIONESEJERCICIO = ?, TIEMPOREALIZACIONEJERCICIO = ?, SERIESEJERCICIO = ?, VARIACIONESMODIFICACIONEJERCICIOPROGRESO = ?, OBSERVACIONESEJERCICIO = ?, FECHAMODIFICACIONEJERCICIO = ?, USUARIOMODIFICAICONEJERCICIO = ?, ESTADOEJERCICIO = ? WHERE IDEJERCICIO = ?', values, (err, rows) => {
+      conn.query('UPDATE ejercicio SET IDMULTIMEDIA = ?, IDTIPOEJERCICIO = ?, IDNIVELDIFICULTADEJERCICIO = ?, IDENTRENADOR = ?, IDOBJETIVOMUSCULAR = ?, NOMBREEJERCICIO = ?, DESCRIPCIONEJERCICIO = ?, INTRUCCIONESEJERCICIO = ?, PESOLEVANTADOEJERCICIO = ?, REPETICIONESEJERCICIO = ?,  SERIESEJERCICIO = ?, VARIACIONESMODIFICACIONEJERCICIOPROGRESO = ?, OBSERVACIONESEJERCICIO = ?, FECHAMODIFICACIONEJERCICIO = ?, USUARIOMODIFICAICONEJERCICIO = ?, ESTADOEJERCICIO = ? WHERE IDEJERCICIO = ?', values, (err, rows) => {
         if (err) {
           return res.status(500).json({ error: 'Error al actualizar los datos: ' + err });
         }
@@ -459,7 +462,7 @@ routes.get('/', (req, res) => {
             const idsArray = data.ID_EQUIPOS_REQUERIDOS.split(',').map(id => [data.IDEJERCICIO, parseInt(id)]);
           conn.query('INSERT INTO equiporequeridoejercicio (IDEJERCICIO , IDEQUIPOREQUERIDO ) VALUES ?', [idsArray], (err, result) => {
             if (err) {
-              return res.status(500).json({ error: 'Error al insertar en otra tabla' + err });
+              return res.status(500).json({ error: 'Error al insertar en trabla de Equipos Requeridos' + err });
             }
             res.json({ message: 'Datos actualizados correctamente' });
             });
@@ -560,6 +563,50 @@ routes.get('/', (req, res) => {
       res.status(500).json({ error: 'Error al subir el archivo' });
     }
   });
+  const MAX_FILE_SIZE_MB = 1; // Tamaño máximo permitido en MB
+  const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024; // Convertir a bytes
+  
+  routes.post('/subir-imagen-rutinas', async (req, res) => {
+
+    if (!req.files || Object.keys(req.files).length === 0) {
+      return res.status(400).json({ error: 'No se ha seleccionado ningún archivo' });
+    }
+  
+    const file = req.files.file;
+    const fileSizeBytes = file.size;
+  
+    if (fileSizeBytes > MAX_FILE_SIZE_BYTES) {
+      return res.status(400).json({ error: 'El tamaño de la imagen debe ser menor a 1 MB' });
+    }
+  
+    const fileName = file.name.replace(/\.[^/.]+$/, ""); // Eliminar la extensión del nombre de archivo
+    const ext = path.extname(file.name);
+    let newFileName = fileName;
+    let counter = 1;
+  
+    // Verificar si el nombre de archivo ya existe
+    while (fs.existsSync(`./media/rutinas/portadasrutinas/${newFileName}${ext}`)) {
+      newFileName = `${fileName}_${counter}`;
+      counter++;
+    }
+  
+    // Mueve el archivo al directorio deseado
+    const filePath = `./media/rutinas/portadasrutinas/${newFileName}${ext}`;
+  
+    try {
+      const image = await Jimp.read(file.data);
+  
+      // Redimensionar manteniendo el aspecto y ajustar la calidad para reducir el tamaño
+      const resizedImage = image.resize(Jimp.AUTO, 1024).quality(70);
+  
+      await resizedImage.writeAsync(filePath);
+      res.json({ message: 'Imagen subida correctamente', fileName: newFileName });
+    } catch (error) {
+      res.status(500).json({ error: 'Error al subir el archivo' + error });
+    }
+  });
+  
+
   // routes.post('/subir-imagen', (req, res) => {
   //   if (!req.files || Object.keys(req.files).length === 0) {
   //     return res.status(400).json({ error: 'No se ha seleccionado ningún archivo' });

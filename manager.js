@@ -40,13 +40,29 @@ routes.get('/entrenadorBasic', (req, res) => {
     if (err) return res.send(err);
 
     conn.query(`
-          SELECT p.IDPERSONA, p.NOMBREPERSONA,p.IDGENERO, p.APELLDOPERSONA, 
-          p.NICKNAMEPERSONA, e.IDENTRENADOR,
-          e.CERTIFICACIONESENTRENADOR, p.IMAGEPERSONA
-      FROM persona p
-      JOIN entrenador e ON p.IDPERSONA = e.IDPERSONA
-      WHERE p.ESTADOPERSONA = 1
-      AND e.ACTIVACIONENTRENADOR = 1;
+    SELECT
+    p.IDPERSONA,
+    p.IDGENERO,
+    p.IDROLUSUARIO,
+    p.NOMBREPERSONA,
+    p.APELLDOPERSONA,
+    p.NICKNAMEPERSONA,
+    p.ESTADOPERSONA,
+    p.IMAGEPERSONA,
+    e.IDENTRENADOR,
+    e.ACTIVACIONENTRENADOR
+  FROM persona p
+  LEFT JOIN entrenador e ON p.IDPERSONA = e.IDPERSONA
+  WHERE
+    p.ESTADOPERSONA = 1
+    AND (
+      p.IDROLUSUARIO = 2 -- Administrador
+      OR p.IDROLUSUARIO = 99 -- Otro rol específico
+      OR (
+        e.IDENTRENADOR IS NOT NULL
+        AND e.ACTIVACIONENTRENADOR = 1
+      )
+    );
   `, (err, rows) => {
       if (err) return res.send(err);
       res.json(rows);
@@ -172,8 +188,6 @@ routes.post('/activacion/:id', (req, res) => {
               res.json({ message: 'Actualizado Datos Correctamente !'});
           }) 
       })
-  })
-
-
+  });
 
 module.exports = routes;

@@ -16,16 +16,16 @@ const secretKey = process.env.SECRET_KEY;
 
 app.set('port', process.env.PORT || 9600)
 const dbOptions ={
-    // host: 'localhost',
-    // port: 3306,
-    // user: 'root',
-    // password: '',
-    // database: 'homefitgo'
-    host: 'mysql-131027-0.cloudclusters.net',
-    port: 10212,
-    user: 'admin',
-    password: 'e3O4qtg4',
+    host: 'localhost',
+    port: 3306,
+    user: 'root',
+    password: '',
     database: 'homefitgo'
+    // host: 'mysql-131027-0.cloudclusters.net',
+    // port: 10212,
+    // user: 'admin',
+    // password: 'e3O4qtg4',
+    // database: 'homefitgo'
 }
 
 // Agregar middleware para permitir CORS

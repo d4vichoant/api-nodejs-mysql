@@ -103,7 +103,7 @@ routes.get('/', (req, res) => {
       if (err) return res.send(err);
   
       conn.query(`
-      SELECT e.IDEJERCICIO, e.IDMULTIMEDIA, m.TITULOMULTIMEDIA, m.DESCRIPCIONMULTIMEDIA,m.TIEMPOMULTIMEDIA, m.ALMACENAMIENTOMULTIMEDIA, m.OBSERVACIONMULTIMEDIA, e.IDTIPOEJERCICIO, t.NOMBRETIPOEJERCICIO, e.IDNIVELDIFICULTADEJERCICIO, n.tituloniveldificultadejercicio, e.IDENTRENADOR, e.IDOBJETIVOMUSCULAR, e.NOMBREEJERCICIO, e.DESCRIPCIONEJERCICIO, e.INTRUCCIONESEJERCICIO, e.PESOLEVANTADOEJERCICIO, e.REPETICIONESEJERCICIO, e.SERIESEJERCICIO, e.VARIACIONESMODIFICACIONEJERCICIOPROGRESO, e.OBSERVACIONESEJERCICIO, e.FECHACREACIONEJERCICIO, e.FECHAMODIFICACIONEJERCICIO, e.USUARIOCREACIONEJERCICIO, e.USUARIOMODIFICAICONEJERCICIO, e.ESTADOEJERCICIO,
+      SELECT e.IDEJERCICIO, e.IDMULTIMEDIA, m.TITULOMULTIMEDIA, m.DESCRIPCIONMULTIMEDIA,m.TIEMPOMULTIMEDIA, m.ALMACENAMIENTOMULTIMEDIA, m.OBSERVACIONMULTIMEDIA, e.IDTIPOEJERCICIO, t.NOMBRETIPOEJERCICIO, e.IDNIVELDIFICULTADEJERCICIO, n.tituloniveldificultadejercicio, e.IDENTRENADOR, e.IDOBJETIVOMUSCULAR, e.NOMBREEJERCICIO, e.DESCRIPCIONEJERCICIO, e.INTRUCCIONESEJERCICIO, e.PESOLEVANTADOEJERCICIO, e.REPETICIONESEJERCICIO, e.METEJERCICIO, e.VARIACIONESMODIFICACIONEJERCICIOPROGRESO, e.OBSERVACIONESEJERCICIO, e.FECHACREACIONEJERCICIO, e.FECHAMODIFICACIONEJERCICIO, e.USUARIOCREACIONEJERCICIO, e.USUARIOMODIFICAICONEJERCICIO, e.ESTADOEJERCICIO,
       GROUP_CONCAT(DISTINCT er.IDEQUIPOREQUERIDO ) AS ID_EQUIPOS_REQUERIDOS,
       GROUP_CONCAT(DISTINCT er.NOMBREEQUIPOREQUERIDO) AS TITULOS_EQUIPOS_REQUERIDOS
       FROM ejercicio AS e
@@ -127,7 +127,7 @@ routes.get('/', (req, res) => {
       if (err) return res.send(err);
   
       conn.query(`
-      SELECT e.IDEJERCICIO, m.ALMACENAMIENTOMULTIMEDIA, t.NOMBRETIPOEJERCICIO, n.tituloniveldificultadejercicio,m.TIEMPOMULTIMEDIA, e.IDENTRENADOR, e.IDOBJETIVOMUSCULAR, o.NOMBREOBJETIVOSMUSCULARES,e.NOMBREEJERCICIO, e.PESOLEVANTADOEJERCICIO, e.REPETICIONESEJERCICIO, m.TIEMPOMULTIMEDIA AS TIEMPOREALIZACIONEJERCICIO, e.SERIESEJERCICIO, 
+      SELECT e.IDEJERCICIO, m.ALMACENAMIENTOMULTIMEDIA, t.NOMBRETIPOEJERCICIO, n.tituloniveldificultadejercicio,m.TIEMPOMULTIMEDIA, e.IDENTRENADOR, e.IDOBJETIVOMUSCULAR, o.NOMBREOBJETIVOSMUSCULARES,e.NOMBREEJERCICIO, e.PESOLEVANTADOEJERCICIO, e.REPETICIONESEJERCICIO, m.TIEMPOMULTIMEDIA AS TIEMPOREALIZACIONEJERCICIO, e.METEJERCICIO, 
       GROUP_CONCAT(DISTINCT er.NOMBREEQUIPOREQUERIDO) AS TITULOS_EQUIPOS_REQUERIDOS
       FROM ejercicio AS e
       JOIN objetivosmusculares AS o ON e.IDOBJETIVOMUSCULAR = o.IDOBJETIVOSMUSCULARES
@@ -374,7 +374,7 @@ routes.get('/', (req, res) => {
         'INTRUCCIONESEJERCICIO',
         'PESOLEVANTADOEJERCICIO',
         'REPETICIONESEJERCICIO',
-        'SERIESEJERCICIO',
+        'METEJERCICIO',
         'VARIACIONESMODIFICACIONEJERCICIOPROGRESO',
         'OBSERVACIONESEJERCICIO',
         'FECHACREACIONEJERCICIO',
@@ -393,7 +393,7 @@ routes.get('/', (req, res) => {
         data.INTRUCCIONESEJERCICIO,
         data.PESOLEVANTADOEJERCICIO,
         data.REPETICIONESEJERCICIO,
-        data.SERIESEJERCICIO,
+        data.METEJERCICIO,
         data.VARIACIONESMODIFICACIONEJERCICIOPROGRESO,
         data.OBSERVACIONESEJERCICIO,
         new Date(),
@@ -440,7 +440,7 @@ routes.get('/', (req, res) => {
         data.INTRUCCIONESEJERCICIO,
         data.PESOLEVANTADOEJERCICIO,
         data.REPETICIONESEJERCICIO,
-        data.SERIESEJERCICIO,
+        data.METEJERCICIO,
         data.VARIACIONESMODIFICACIONEJERCICIOPROGRESO,
         data.OBSERVACIONESEJERCICIO,
         new Date(),
@@ -449,7 +449,7 @@ routes.get('/', (req, res) => {
         data.IDEJERCICIO // ID del ejercicio que se va a actualizar
       ];
   
-      conn.query('UPDATE ejercicio SET IDMULTIMEDIA = ?, IDTIPOEJERCICIO = ?, IDNIVELDIFICULTADEJERCICIO = ?, IDENTRENADOR = ?, IDOBJETIVOMUSCULAR = ?, NOMBREEJERCICIO = ?, DESCRIPCIONEJERCICIO = ?, INTRUCCIONESEJERCICIO = ?, PESOLEVANTADOEJERCICIO = ?, REPETICIONESEJERCICIO = ?,  SERIESEJERCICIO = ?, VARIACIONESMODIFICACIONEJERCICIOPROGRESO = ?, OBSERVACIONESEJERCICIO = ?, FECHAMODIFICACIONEJERCICIO = ?, USUARIOMODIFICAICONEJERCICIO = ?, ESTADOEJERCICIO = ? WHERE IDEJERCICIO = ?', values, (err, rows) => {
+      conn.query('UPDATE ejercicio SET IDMULTIMEDIA = ?, IDTIPOEJERCICIO = ?, IDNIVELDIFICULTADEJERCICIO = ?, IDENTRENADOR = ?, IDOBJETIVOMUSCULAR = ?, NOMBREEJERCICIO = ?, DESCRIPCIONEJERCICIO = ?, INTRUCCIONESEJERCICIO = ?, PESOLEVANTADOEJERCICIO = ?, REPETICIONESEJERCICIO = ?,  METEJERCICIO = ?, VARIACIONESMODIFICACIONEJERCICIOPROGRESO = ?, OBSERVACIONESEJERCICIO = ?, FECHAMODIFICACIONEJERCICIO = ?, USUARIOMODIFICAICONEJERCICIO = ?, ESTADOEJERCICIO = ? WHERE IDEJERCICIO = ?', values, (err, rows) => {
         if (err) {
           return res.status(500).json({ error: 'Error al actualizar los datos: ' + err });
         }
@@ -605,6 +605,46 @@ routes.get('/', (req, res) => {
       res.status(500).json({ error: 'Error al subir el archivo' + error });
     }
   });
+  
+  routes.post('/copyFiles-portadassesiones', (req, res) => {
+    const sourceFileName = req.body.oldnameFile; // Nombre del primer archivo
+    const targetFileName = req.body.newnameFile; // Nombre del segundo archivo
+  
+    const sourcePath = path.join(__dirname, './media/rutinas/portadasrutinas/', sourceFileName);
+    let targetPath = path.join(__dirname, './media/sesiones/portadassesiones/', targetFileName);
+  
+    // Verificar si el archivo de destino ya existe
+    if (fs.existsSync(targetPath)) {
+      let suffix = 1;
+  
+      // Si el archivo de destino ya existe, agregar sufijo numérico
+      while (fs.existsSync(targetPath)) {
+        const fileNameWithoutExt = targetFileName.slice(0, targetFileName.lastIndexOf('.'));
+        const fileExt = targetFileName.slice(targetFileName.lastIndexOf('.'));
+  
+        const suffixedFileName = `${fileNameWithoutExt}_${suffix}${fileExt}`;
+        targetPath = path.join(__dirname, './media/sesiones/portadassesiones/', suffixedFileName);
+  
+        suffix++;
+      }
+    }
+  
+    // Copiar el archivo de origen al destino
+    fs.copyFile(sourcePath, targetPath, (err) => {
+      if (err) {
+        // Ocurrió un error al copiar el archivo
+        return res.status(500).json({ error: 'No se pudo copiar el archivo' });
+      }
+  
+      // El archivo se copió exitosamente
+      res.json({ message: 'Archivo copiado exitosamente', newFileName: path.basename(targetPath) });
+    });
+  });
+  
+  
+  
+  
+
   
 
   // routes.post('/subir-imagen', (req, res) => {

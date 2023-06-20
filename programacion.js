@@ -26,7 +26,7 @@ routes.get('/rutinas',(req,res)=>{
     req.getConnection((err,conn)=>{
         if(err) return res.send(err)
         conn.query(`
-        SELECT r.IDRUTINA, r.IDENTRENADOR, r.IDTIPOEJERCICIORUTINA, t.NOMBRETIPOEJERCICIO,
+        SELECT r.IDRUTINA, r.IDENTRENADOR, p.NICKNAMEPERSONA, r.IDTIPOEJERCICIORUTINA, t.NOMBRETIPOEJERCICIO,
             r.IDOBJETIVOSPERSONALESRUTINA, o.DESCRIPCIONOBJETIVOSPERSONALES,
                 r.NOMBRERUTINA, r.DESCRIPCIONRUTINA, r.DURACIONRUTINA, r.IMAGENRUTINA,
                 r.OBSERVACIONRUTINA, r.FECHACREACIONRUTINA, r.FECHAMODIFICACIONRUTINA,
@@ -35,10 +35,34 @@ routes.get('/rutinas',(req,res)=>{
         FROM rutina r
         LEFT JOIN rutinasdeejercicios re ON r.IDRUTINA = re.IDRUTINA
         JOIN tipoejercicio t ON r.IDTIPOEJERCICIORUTINA = t.IDTIPOEJERCICIO
+        JOIN persona p ON r.IDENTRENADOR = p.IDPERSONA
         JOIN objetivospersonales o ON r.IDOBJETIVOSPERSONALESRUTINA = o.IDOBJETIVOSPERSONALES 
         WHERE r.STATUSRUTINA=1
         GROUP BY r.IDRUTINA
         `,(err,rows)=>{
+            if(err) return res.send(err)
+            res.json(rows)
+        })
+    })
+  });
+  routes.get('/rutinasActivatebyObjetive/:idObjetive',(req,res)=>{
+    req.getConnection((err,conn)=>{
+        if(err) return res.send(err)
+        conn.query(`
+        SELECT r.IDRUTINA, r.IDENTRENADOR, p.NICKNAMEPERSONA, r.IDTIPOEJERCICIORUTINA, t.NOMBRETIPOEJERCICIO,
+            r.IDOBJETIVOSPERSONALESRUTINA, o.DESCRIPCIONOBJETIVOSPERSONALES,
+                r.NOMBRERUTINA, r.DESCRIPCIONRUTINA, r.DURACIONRUTINA, r.IMAGENRUTINA,
+                r.OBSERVACIONRUTINA, r.FECHACREACIONRUTINA, r.FECHAMODIFICACIONRUTINA,
+                r.USUARIOCREACIONRUTINA, r.USUARIOMODIFICAIONRUTINA, r.COMENTARIOSRUTINA,
+                r.STATUSRUTINA, GROUP_CONCAT(re.IDEJERCICIO SEPARATOR ',') AS IDEJERCICIOS
+        FROM rutina r
+        LEFT JOIN rutinasdeejercicios re ON r.IDRUTINA = re.IDRUTINA
+        JOIN tipoejercicio t ON r.IDTIPOEJERCICIORUTINA = t.IDTIPOEJERCICIO
+        JOIN persona p ON r.IDENTRENADOR = p.IDPERSONA
+        JOIN objetivospersonales o ON r.IDOBJETIVOSPERSONALESRUTINA = o.IDOBJETIVOSPERSONALES 
+        WHERE r.STATUSRUTINA=1  AND r.IDOBJETIVOSPERSONALESRUTINA = ?
+        GROUP BY r.IDRUTINA
+        `,[req.params.idObjetive] ,(err,rows)=>{
             if(err) return res.send(err)
             res.json(rows)
         })

@@ -305,7 +305,7 @@ routes.get('/check-nickname/:nickname', (req, res) => {
     const nickname = req.params.nickname;
     req.getConnection((err, conn) => {
       if (err) return res.send(err);
-      conn.query('SELECT COUNT(*) AS count FROM persona WHERE NICKNAMEPERSONA = ? AND ESTADOPERSONA=true', [nickname], (err, rows) => {
+      conn.query('SELECT COUNT(*) AS count FROM persona WHERE NICKNAMEPERSONA = ? AND ESTADOPERSONA=1', [nickname], (err, rows) => {
         if (err) return res.send(err);
         const count = rows[0].count;
         const isNicknameAvailable = count === 0;
@@ -499,7 +499,7 @@ routes.post('/updateEntrenador', (req, res) => {
   });
 });
 
-const MAX_FILE_SIZE_MB = 1; // Tamaño máximo permitido en MB
+const MAX_FILE_SIZE_MB = 2; // Tamaño máximo permitido en MB
 const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024; // Convertir a bytes
 const TARGET_WIDTH = 100; // Ancho deseado en píxeles
 

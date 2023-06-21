@@ -14,18 +14,18 @@ const cors = require('cors');
 
 const secretKey = process.env.SECRET_KEY;
 
-app.set('port', process.env.PORT || 8080  )
+app.set('port', process.env.PORT || 9600  )
 const dbOptions ={
-/*     host: 'localhost',
+    host: 'localhost',
     port: 3306,
     user: 'root',
     password: '',
-    database: 'homefitgo' */
-    host: 'mysql-132581-0.cloudclusters.net',
+    database: 'homefitgo'
+/*     host: 'mysql-132581-0.cloudclusters.net',
     port: 10078,
     user: 'admin',
     password: 'sBVQxf85',
-    database: 'homefitgo'
+    database: 'homefitgo' */
 }
 
 // Agregar middleware para permitir CORS

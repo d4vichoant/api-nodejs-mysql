@@ -86,7 +86,69 @@ routes.get('/rutinas',(req,res)=>{
         })
     })
   });
+  routes.get('/imagePorEntrenadorSesion',(req,res)=>{
+    req.getConnection((err,conn)=>{
+        if(err) return res.send(err)
+        conn.query(`
+        SELECT DISTINCT pr.IDENTRENADOR, p.IMAGEPERSONA
+        FROM programarsesion pr
+        LEFT JOIN programarsesionrutinas ps ON pr.IDSESION = ps.IDSESION
+        JOIN persona p ON pr.IDENTRENADOR = p.IDPERSONA 
+        GROUP BY pr.IDENTRENADOR
+        `,(err,rows)=>{
+            if(err) return res.send(err)
+            res.json(rows)
+        }) 
+    })
+  });
   
+  routes.get('/sesiones',(req,res)=>{
+    req.getConnection((err,conn)=>{
+        if(err) return res.send(err)
+        conn.query(`
+        SELECT pr.IDSESION, pr.IDENTRENADOR, per.NICKNAMEPERSONA, pr.IDFRECUENCIASESION,
+                COALESCE(f.TituloFrecuenciaEjercicio, null) AS TituloFrecuenciaEjercicio,
+                pr.IDPROFESIONSESION, COALESCE(p.DESCRIPCIONPROFESION, null) AS DESCRIPCIONPROFESION,
+                pr.IDOBJETIVOSPERSONALESSESION, COALESCE(o.DESCRIPCIONOBJETIVOSPERSONALES, null) AS DESCRIPCIONOBJETIVOSPERSONALES,
+                pr.NOMBRESESION, pr.IMAGESESION, pr.OBJETIVOSESION, pr.OBSERVACIONSESION,
+                pr.STATUSSESION, GROUP_CONCAT(pse.IDRUTINA SEPARATOR ',') AS IDRUTINAS
+        FROM programarsesion pr
+        LEFT JOIN programarsesionrutinas pse ON pr.IDSESION = pse.IDSESION
+        LEFT JOIN frecuenciaejercicio f ON pr.IDFRECUENCIASESION = f.IDFRECUENCIA
+        LEFT JOIN objetivospersonales o ON pr.IDOBJETIVOSPERSONALESSESION = o.IDOBJETIVOSPERSONALES
+        LEFT JOIN profesion p ON pr.IDPROFESIONSESION = p.IDPROFESION
+        JOIN persona per ON pr.IDENTRENADOR = per.IDPERSONA
+        GROUP BY pr.IDSESION;
+        `,(err,rows)=>{
+            if(err) return res.send(err)
+            res.json(rows)
+        })
+    })
+  });
+  routes.get('/sesionesActivate',(req,res)=>{
+    req.getConnection((err,conn)=>{
+        if(err) return res.send(err)
+        conn.query(`
+        SELECT pr.IDSESION, pr.IDENTRENADOR, per.NICKNAMEPERSONA, pr.IDFRECUENCIASESION,
+                COALESCE(f.TituloFrecuenciaEjercicio, null) AS TituloFrecuenciaEjercicio,
+                pr.IDPROFESIONSESION, COALESCE(p.DESCRIPCIONPROFESION, null) AS DESCRIPCIONPROFESION,
+                pr.IDOBJETIVOSPERSONALESSESION, COALESCE(o.DESCRIPCIONOBJETIVOSPERSONALES, null) AS DESCRIPCIONOBJETIVOSPERSONALES,
+                pr.NOMBRESESION, pr.IMAGESESION, pr.OBJETIVOSESION, pr.OBSERVACIONSESION,
+                pr.STATUSSESION, GROUP_CONCAT(pse.IDRUTINA SEPARATOR ',') AS IDRUTINAS
+        FROM programarsesion pr
+        LEFT JOIN programarsesionrutinas pse ON pr.IDSESION = pse.IDSESION
+        LEFT JOIN frecuenciaejercicio f ON pr.IDFRECUENCIASESION = f.IDFRECUENCIA
+        LEFT JOIN objetivospersonales o ON pr.IDOBJETIVOSPERSONALESSESION = o.IDOBJETIVOSPERSONALES
+        LEFT JOIN profesion p ON pr.IDPROFESIONSESION = p.IDPROFESION
+        JOIN persona per ON pr.IDENTRENADOR = per.IDPERSONA
+        WHERE pr.STATUSSESION=1
+        GROUP BY pr.IDSESION;
+        `,(err,rows)=>{
+            if(err) return res.send(err)
+            res.json(rows)
+        })
+    })
+  });
 
   routes.post('/CreateDataRutina', (req, res) => {
     //console.log(req.body);
@@ -145,6 +207,72 @@ routes.get('/rutinas',(req,res)=>{
     });
   });
 
+  routes.post('/CreateDataSesion', (req, res) => {
+    req.getConnection((err, conn) => {
+      if (err) return res.json(err);
+      const data = req.body; 
+      const columns = [
+        'IDENTRENADOR',
+        'NOMBRESESION',
+        'IMAGESESION',
+        'USUARIOCREACIONSESION',
+        'FECHACREACIONSESION',
+        'STATUSSESION',
+        'OBSERVACIONSESION'
+      ];
+      const values = [
+        data.IDENTRENADOR,
+        data.NOMBRESESION,
+        data.IMAGESESION,
+        data.USUARIOCREACIONSESION,
+        new Date(),
+        data.STATUSSESION,
+        data.OBSERVACIONSESION
+      ];
+      if(data.IDFRECUENCIASESION>=0){
+        columns.push('IDFRECUENCIASESION');
+        values.push(data.IDFRECUENCIASESION);
+      }
+      if(data.IDPROFESIONSESION>=0){
+        columns.push('IDPROFESIONSESION');
+        values.push(data.IDPROFESIONSESION);
+      }
+      if(data.IDOBJETIVOSPERSONALESSESION>=0 ){
+        columns.push('IDOBJETIVOSPERSONALESSESION');
+        values.push(data.IDOBJETIVOSPERSONALESSESION );
+      }
+      if(data.OBJETIVOSESION!=undefined){
+        columns.push('OBJETIVOSESION');
+        values.push(data.OBJETIVOSESION );
+      }
+
+      conn.query('INSERT INTO programarsesion (' + columns.join(',') + ') VALUES ?', [[values]], (err, rows) => {
+        if (err) {
+          return res.status(500).json({ error: 'Error al actualizar Datos' + err });
+        }
+        const sesionId = rows.insertId; 
+
+        if(data.ID_RUTINAS_SESION){
+          let idsArray = [];
+          if (data.ID_RUTINAS_SESION.includes(',')) {
+            idsArray = data.ID_RUTINAS_SESION.split(',').map(id => [sesionId, parseInt(id)]);
+          } else {
+            idsArray = [[sesionId, parseInt(data.ID_RUTINAS_SESION)]];
+          }
+          conn.query('INSERT INTO   programarsesionrutinas (IDSESION,IDRUTINA) VALUES ?', [idsArray], (err, result) => {
+          if (err) {
+            return res.status(500).json({ error: 'Error al insertar en tabla de Sesion Rutinas' + err });
+          }
+          res.json({ message: 'Datos creados correctamente' });
+          });
+        }else{
+          res.json({ message:  'Datos creados correctamente'  });
+        }
+      });
+    });
+  });
+  
+
   routes.post('/UpdateDataRutina', (req, res) => {
     //console.log(req.body);
     req.getConnection((err, conn) => {
@@ -166,7 +294,6 @@ routes.get('/rutinas',(req,res)=>{
         data.STATUSRUTINA,
         data.IDRUTINA
       ];
-      //console.log(values);
   
       conn.query(`
       UPDATE rutina SET IDENTRENADOR=?, IDTIPOEJERCICIORUTINA=?,IDOBJETIVOSPERSONALESRUTINA=?,
@@ -178,14 +305,14 @@ routes.get('/rutinas',(req,res)=>{
         }
         conn.query('DELETE FROM rutinasdeejercicios WHERE IDRUTINA = ?', [data.IDRUTINA], (err, result) => {
           if (err) {
-            return res.status(500).json({ error: 'Error al eliminar registros relacionados' + err });
+            return res.status(500).json({ error: 'Error al eliminar registros relacionados Rutinas' + err });
           }
 
         if(data.ID_EJERCICIOS_RUTINA){
           const idsArray = data.ID_EJERCICIOS_RUTINA.split(',').map(id => [data.IDRUTINA, parseInt(id)]);
           conn.query('INSERT INTO  rutinasdeejercicios (IDRUTINA  , IDEJERCICIO   ) VALUES ?', [idsArray], (err, result) => {
           if (err) {
-            return res.status(500).json({ error: 'Error al insertar en trabla de Equipos Requeridos' + err });
+            return res.status(500).json({ error: 'Error al actualizar en tabla de Rutinas Ejercicios' + err });
           }
           res.json({ message: 'Datos actualizados correctamente' });
           });
@@ -197,5 +324,76 @@ routes.get('/rutinas',(req,res)=>{
     });
   });
 
+  routes.post('/UpdateDataSesion', (req, res) => {
+    req.getConnection((err, conn) => {
+      if (err) return res.json(err);
+      const data = req.body;
+      const sesionId = data.IDSESION; // Obtener el IDSESION de los datos
+  
+      const columns = [
+        'IDENTRENADOR',
+        'NOMBRESESION',
+        'IMAGESESION',
+        'USUARIOMODIFICACIONSESION',
+        'FECHAMODIFICACIONSESION',
+        'STATUSSESION',
+        'OBSERVACIONSESION'
+      ];
+      const values = [
+        data.IDENTRENADOR,
+        data.NOMBRESESION,
+        data.IMAGESESION,
+        data.USUARIOCREACIONSESION,
+        new Date(),
+        data.STATUSSESION,
+        data.OBSERVACIONSESION
+      ];
+      if (data.IDFRECUENCIASESION >= 0) {
+        columns.push('IDFRECUENCIASESION');
+        values.push(data.IDFRECUENCIASESION);
+      }
+      if (data.IDPROFESIONSESION >= 0) {
+        columns.push('IDPROFESIONSESION');
+        values.push(data.IDPROFESIONSESION);
+      }
+      if (data.IDOBJETIVOSPERSONALESSESION >= 0) {
+        columns.push('IDOBJETIVOSPERSONALESSESION');
+        values.push(data.IDOBJETIVOSPERSONALESSESION);
+      }
+      if (data.OBJETIVOSESION != undefined) {
+        columns.push('OBJETIVOSESION');
+        values.push(data.OBJETIVOSESION);
+      }
+  
+      conn.query('UPDATE programarsesion SET ' + columns.join('=?, ') + '=? WHERE IDSESION = ?', [...values, sesionId], (err, rows) => {
+        if (err) {
+          return res.status(500).json({ error: 'Error al actualizar Datos' + err });
+        }
+        conn.query('DELETE FROM programarsesionrutinas WHERE IDSESION  = ?', [sesionId], (err, result) => {
+          if (err) {
+            return res.status(500).json({ error: 'Error al eliminar registros relacionados Sesiones' + err });
+          }
+  
+        if (data.ID_RUTINAS_SESION) {
+          let idsArray = [];
+          if (data.ID_RUTINAS_SESION.includes(',')) {
+            idsArray = data.ID_RUTINAS_SESION.split(',').map(id => [sesionId, parseInt(id)]);
+          } else {
+            idsArray = [[sesionId, parseInt(data.ID_RUTINAS_SESION)]];
+          }
+          conn.query('INSERT INTO programarsesionrutinas (IDSESION, IDRUTINA) VALUES ?', [idsArray], (err, result) => {
+            if (err) {
+              return res.status(500).json({ error: 'Error al actualizar en tabla de Sesiones Rutinas' + err });
+            }
+            res.json({ message: 'Datos actualizados correctamente' });
+          });
+        } else {
+          res.json({ message: 'Datos actualizados correctamente' });
+        }
+      });
+      });
+    });
+  });
+  
 
   module.exports = routes;

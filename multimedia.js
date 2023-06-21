@@ -196,13 +196,19 @@ routes.get('/', (req, res) => {
   });
 
   routes.post('/chanceActivacion/:nombre', (req, res) => {
-    req.getConnection((err, conn) => {
+      let parametro="";
+      req.getConnection((err, conn) => {
+      if(req.params.nombre==="programarsesion"){
+        parametro="sesion"
+      }else{
+        parametro=req.params.nombre;
+      }
       if (err) return res.json(err);
-      const observacion = `OBSERVACION${req.params.nombre.toUpperCase()}`;
+      const observacion = `OBSERVACION${parametro.toUpperCase()}`;
       const observacionValue = req.body[observacion];
-      const status = `STATUS${req.params.nombre.toUpperCase()}`;
+      const status = `STATUS${parametro.toUpperCase()}`;
       const statusValue = req.body[status];
-      const id = `ID${req.params.nombre.toUpperCase()}`;
+      const id = `ID${parametro.toUpperCase()}`;
       const idValue = req.body[id];
       conn.query('UPDATE ?? SET ?? = ?, ??=? WHERE ?? = ?', [req.params.nombre, status, statusValue,observacion,observacionValue, id, idValue], (err, rows) => {
         if (err) return res.json(err)
@@ -592,6 +598,46 @@ routes.get('/', (req, res) => {
   
     // Mueve el archivo al directorio deseado
     const filePath = `./media/rutinas/portadasrutinas/${newFileName}${ext}`;
+  
+    try {
+      const image = await Jimp.read(file.data);
+  
+      // Redimensionar manteniendo el aspecto y ajustar la calidad para reducir el tamaño
+      const resizedImage = image.resize(Jimp.AUTO, 1024).quality(70);
+  
+      await resizedImage.writeAsync(filePath);
+      res.json({ message: 'Imagen subida correctamente', fileName: newFileName });
+    } catch (error) {
+      res.status(500).json({ error: 'Error al subir el archivo' + error });
+    }
+  });
+  
+  routes.post('/subir-imagen-sesiones', async (req, res) => {
+
+    if (!req.files || Object.keys(req.files).length === 0) {
+      return res.status(400).json({ error: 'No se ha seleccionado ningún archivo' });
+    }
+  
+    const file = req.files.file;
+    const fileSizeBytes = file.size;
+  
+    if (fileSizeBytes > MAX_FILE_SIZE_BYTES) {
+      return res.status(400).json({ error: 'El tamaño de la imagen debe ser menor a 1 MB' });
+    }
+  
+    const fileName = file.name.replace(/\.[^/.]+$/, ""); // Eliminar la extensión del nombre de archivo
+    const ext = path.extname(file.name);
+    let newFileName = fileName;
+    let counter = 1;
+  
+    // Verificar si el nombre de archivo ya existe
+    while (fs.existsSync(`./media/sesiones/portadassesiones/${newFileName}${ext}`)) {
+      newFileName = `${fileName}_${counter}`;
+      counter++;
+    }
+  
+    // Mueve el archivo al directorio deseado
+    const filePath = `./media/sesiones/portadassesiones/${newFileName}${ext}`;
   
     try {
       const image = await Jimp.read(file.data);

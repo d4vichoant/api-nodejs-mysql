@@ -5,7 +5,7 @@ routes.get('/rutinas',(req,res)=>{
   req.getConnection((err,conn)=>{
       if(err) return res.send(err)
       conn.query(`
-      SELECT r.IDRUTINA, r.IDENTRENADOR, r.IDTIPOEJERCICIORUTINA, t.NOMBRETIPOEJERCICIO,
+      SELECT r.IDRUTINA, r.IDENTRENADOR, p.IDROLUSUARIO,r.IDTIPOEJERCICIORUTINA, t.NOMBRETIPOEJERCICIO,
             r.IDOBJETIVOSPERSONALESRUTINA, o.DESCRIPCIONOBJETIVOSPERSONALES,
               r.NOMBRERUTINA, r.DESCRIPCIONRUTINA, r.DURACIONRUTINA, r.IMAGENRUTINA,
               r.OBSERVACIONRUTINA,  r.COMENTARIOSRUTINA,
@@ -14,6 +14,7 @@ routes.get('/rutinas',(req,res)=>{
       LEFT JOIN rutinasdeejercicios re ON r.IDRUTINA = re.IDRUTINA
       JOIN tipoejercicio t ON r.IDTIPOEJERCICIORUTINA = t.IDTIPOEJERCICIO
       JOIN objetivospersonales o ON r.IDOBJETIVOSPERSONALESRUTINA = o.IDOBJETIVOSPERSONALES 
+      JOIN persona p ON r.IDENTRENADOR = p.IDPERSONA
       GROUP BY r.IDRUTINA
       `,(err,rows)=>{
           if(err) return res.send(err)
@@ -26,7 +27,7 @@ routes.get('/rutinas',(req,res)=>{
     req.getConnection((err,conn)=>{
         if(err) return res.send(err)
         conn.query(`
-        SELECT r.IDRUTINA, r.IDENTRENADOR, p.NICKNAMEPERSONA, r.IDTIPOEJERCICIORUTINA, t.NOMBRETIPOEJERCICIO,
+        SELECT r.IDRUTINA, r.IDENTRENADOR, p.NICKNAMEPERSONA, p.IDROLUSUARIO, r.IDTIPOEJERCICIORUTINA, t.NOMBRETIPOEJERCICIO,
             r.IDOBJETIVOSPERSONALESRUTINA, o.DESCRIPCIONOBJETIVOSPERSONALES,
                 r.NOMBRERUTINA, r.DESCRIPCIONRUTINA, r.DURACIONRUTINA, r.IMAGENRUTINA,
                 r.OBSERVACIONRUTINA, r.FECHACREACIONRUTINA, r.FECHAMODIFICACIONRUTINA,
@@ -38,7 +39,7 @@ routes.get('/rutinas',(req,res)=>{
         JOIN persona p ON r.IDENTRENADOR = p.IDPERSONA
         JOIN objetivospersonales o ON r.IDOBJETIVOSPERSONALESRUTINA = o.IDOBJETIVOSPERSONALES 
         WHERE r.STATUSRUTINA=1
-        GROUP BY r.IDRUTINA
+        GROUP BY r.IDRUTINA;
         `,(err,rows)=>{
             if(err) return res.send(err)
             res.json(rows)
@@ -50,7 +51,7 @@ routes.get('/rutinas',(req,res)=>{
         if(err) return res.send(err)
         conn.query(`
         SELECT r.IDRUTINA, r.IDENTRENADOR, p.NICKNAMEPERSONA, r.IDTIPOEJERCICIORUTINA, t.NOMBRETIPOEJERCICIO,
-            r.IDOBJETIVOSPERSONALESRUTINA, o.DESCRIPCIONOBJETIVOSPERSONALES,
+            r.IDOBJETIVOSPERSONALESRUTINA, o.DESCRIPCIONOBJETIVOSPERSONALES, p.IDROLUSUARIO,
                 r.NOMBRERUTINA, r.DESCRIPCIONRUTINA, r.DURACIONRUTINA, r.IMAGENRUTINA,
                 r.OBSERVACIONRUTINA, r.FECHACREACIONRUTINA, r.FECHAMODIFICACIONRUTINA,
                 r.USUARIOCREACIONRUTINA, r.USUARIOMODIFICAIONRUTINA, r.COMENTARIOSRUTINA,
@@ -106,7 +107,7 @@ routes.get('/rutinas',(req,res)=>{
     req.getConnection((err,conn)=>{
         if(err) return res.send(err)
         conn.query(`
-        SELECT pr.IDSESION, pr.IDENTRENADOR, per.NICKNAMEPERSONA, pr.IDFRECUENCIASESION,
+        SELECT pr.IDSESION, pr.IDENTRENADOR, per.NICKNAMEPERSONA, pr.IDFRECUENCIASESION,per.IDPERSONA, per.IDROLUSUARIO,
                 COALESCE(f.TituloFrecuenciaEjercicio, null) AS TituloFrecuenciaEjercicio,
                 pr.IDPROFESIONSESION, COALESCE(p.DESCRIPCIONPROFESION, null) AS DESCRIPCIONPROFESION,
                 pr.IDOBJETIVOSPERSONALESSESION, COALESCE(o.DESCRIPCIONOBJETIVOSPERSONALES, null) AS DESCRIPCIONOBJETIVOSPERSONALES,
@@ -129,7 +130,7 @@ routes.get('/rutinas',(req,res)=>{
     req.getConnection((err,conn)=>{
         if(err) return res.send(err)
         conn.query(`
-        SELECT pr.IDSESION, pr.IDENTRENADOR, per.NICKNAMEPERSONA, pr.IDFRECUENCIASESION,
+        SELECT pr.IDSESION, pr.IDENTRENADOR, per.NICKNAMEPERSONA, pr.IDFRECUENCIASESION,per.IDPERSONA, per.IDROLUSUARIO,
                 COALESCE(f.TituloFrecuenciaEjercicio, null) AS TituloFrecuenciaEjercicio,
                 pr.IDPROFESIONSESION, COALESCE(p.DESCRIPCIONPROFESION, null) AS DESCRIPCIONPROFESION,
                 pr.IDOBJETIVOSPERSONALESSESION, COALESCE(o.DESCRIPCIONOBJETIVOSPERSONALES, null) AS DESCRIPCIONOBJETIVOSPERSONALES,
@@ -194,7 +195,7 @@ routes.get('/rutinas',(req,res)=>{
 
         if(data.ID_EJERCICIOS_RUTINA){
           const idsArray = data.ID_EJERCICIOS_RUTINA.split(',').map(id => [rutinaId, parseInt(id)]);
-          conn.query('INSERT INTO  rutinasdeejercicios (IDRUTINA  , IDEJERCICIO   ) VALUES ?', [idsArray], (err, result) => {
+          conn.query('INSERT INTO  rutinasdeejercicios (IDRUTINA  , IDEJERCICIO) VALUES ?', [idsArray], (err, result) => {
           if (err) {
             return res.status(500).json({ error: 'Error al insertar en trabla de Equipos Requeridos' + err });
           }
@@ -208,6 +209,7 @@ routes.get('/rutinas',(req,res)=>{
   });
 
   routes.post('/CreateDataSesion', (req, res) => {
+    console.log(req.body);
     req.getConnection((err, conn) => {
       if (err) return res.json(err);
       const data = req.body; 

@@ -12,7 +12,14 @@ routes.get('/', (req, res) => {
     req.getConnection((err, conn) => {
       if (err) return res.send(err);
   
-      conn.query('SELECT * FROM `multimedia` ORDER BY 1', (err, rows) => {
+      conn.query(`
+      SELECT m.IDMULTIMEDIA, m.TITULOMULTIMEDIA, m.DESCRIPCIONMULTIMEDIA, m.ALMACENAMIENTOMULTIMEDIA, m.STATUSMULTIMEDIA,
+      m.TIEMPOMULTIMEDIA, m.OBSERVACIONMULTIMEDIA, p.IDROLUSUARIO ,m.IDENTRENADORMULTIMEDIA
+        FROM multimedia m
+        JOIN persona p ON m.IDENTRENADORMULTIMEDIA = p.IDPERSONA
+        WHERE 1 
+        ORDER BY 1;
+      `, (err, rows) => {
         if (err) return res.send(err);
   
         res.json(rows);
@@ -23,7 +30,13 @@ routes.get('/', (req, res) => {
     req.getConnection((err, conn) => {
       if (err) return res.send(err);
   
-      conn.query('SELECT * FROM `multimedia` WHERE STATUSMULTIMEDIA = 1 ORDER BY 1', (err, rows) => {
+      conn.query(`
+      SELECT m.IDMULTIMEDIA, m.TITULOMULTIMEDIA, m.DESCRIPCIONMULTIMEDIA, m.ALMACENAMIENTOMULTIMEDIA,
+      m.STATUSMULTIMEDIA, m.TIEMPOMULTIMEDIA, m.OBSERVACIONMULTIMEDIA, m.IDENTRENADORMULTIMEDIA,p.IDROLUSUARIO
+        FROM multimedia m
+        JOIN persona p ON m.IDENTRENADORMULTIMEDIA = p.IDPERSONA
+        WHERE  m.STATUSMULTIMEDIA=1
+      `, (err, rows) => {
         if (err) return res.send(err);
   
         res.json(rows);
@@ -47,6 +60,18 @@ routes.get('/', (req, res) => {
       if (err) return res.send(err);
   
       conn.query('SELECT * FROM `equiporequerido` ORDER BY `NOMBREEQUIPOREQUERIDO`', (err, rows) => {
+        if (err) return res.send(err);
+  
+        res.json(rows);
+      });
+    });
+  });
+
+  routes.get('/met', (req, res) => {
+    req.getConnection((err, conn) => {
+      if (err) return res.send(err);
+  
+      conn.query('SELECT * FROM `metabolicequivalentoftask` ORDER BY `actividadMetabolicEquivalentOfTask`', (err, rows) => {
         if (err) return res.send(err);
   
         res.json(rows);
@@ -103,13 +128,14 @@ routes.get('/', (req, res) => {
       if (err) return res.send(err);
   
       conn.query(`
-      SELECT e.IDEJERCICIO, e.IDMULTIMEDIA, m.TITULOMULTIMEDIA, m.DESCRIPCIONMULTIMEDIA,m.TIEMPOMULTIMEDIA, m.ALMACENAMIENTOMULTIMEDIA, m.OBSERVACIONMULTIMEDIA, e.IDTIPOEJERCICIO, t.NOMBRETIPOEJERCICIO, e.IDNIVELDIFICULTADEJERCICIO, n.tituloniveldificultadejercicio, e.IDENTRENADOR, e.IDOBJETIVOMUSCULAR, e.NOMBREEJERCICIO, e.DESCRIPCIONEJERCICIO, e.INTRUCCIONESEJERCICIO, e.PESOLEVANTADOEJERCICIO, e.REPETICIONESEJERCICIO, e.METEJERCICIO, e.VARIACIONESMODIFICACIONEJERCICIOPROGRESO, e.OBSERVACIONESEJERCICIO, e.FECHACREACIONEJERCICIO, e.FECHAMODIFICACIONEJERCICIO, e.USUARIOCREACIONEJERCICIO, e.USUARIOMODIFICAICONEJERCICIO, e.ESTADOEJERCICIO,
+      SELECT e.IDEJERCICIO, e.IDMULTIMEDIA, m.TITULOMULTIMEDIA, m.DESCRIPCIONMULTIMEDIA,m.TIEMPOMULTIMEDIA, m.ALMACENAMIENTOMULTIMEDIA, m.OBSERVACIONMULTIMEDIA, e.IDTIPOEJERCICIO, t.NOMBRETIPOEJERCICIO, e.IDNIVELDIFICULTADEJERCICIO, n.tituloniveldificultadejercicio, e.IDENTRENADOR,per.IDROLUSUARIO, e.IDOBJETIVOMUSCULAR, e.NOMBREEJERCICIO, e.DESCRIPCIONEJERCICIO, e.INTRUCCIONESEJERCICIO, e.PESOLEVANTADOEJERCICIO, e.REPETICIONESEJERCICIO, e.METEJERCICIO, e.VARIACIONESMODIFICACIONEJERCICIOPROGRESO, e.OBSERVACIONESEJERCICIO, e.FECHACREACIONEJERCICIO, e.FECHAMODIFICACIONEJERCICIO, e.USUARIOCREACIONEJERCICIO, e.USUARIOMODIFICAICONEJERCICIO, e.ESTADOEJERCICIO,
       GROUP_CONCAT(DISTINCT er.IDEQUIPOREQUERIDO ) AS ID_EQUIPOS_REQUERIDOS,
       GROUP_CONCAT(DISTINCT er.NOMBREEQUIPOREQUERIDO) AS TITULOS_EQUIPOS_REQUERIDOS
       FROM ejercicio AS e
       JOIN tipoejercicio AS t ON e.IDTIPOEJERCICIO = t.IDTIPOEJERCICIO
       JOIN niveldificultadejercicio AS n ON e.IDNIVELDIFICULTADEJERCICIO = n.IDNIVELDIFICULTADEJERCICIO
       JOIN multimedia AS m ON e.IDMULTIMEDIA = m.IDMULTIMEDIA
+      JOIN persona AS per ON e.IDENTRENADOR = per.IDPERSONA
       LEFT JOIN equiporequeridoejercicio AS ere ON e.IDEJERCICIO = ere.IDEJERCICIO
       LEFT JOIN equiporequerido AS er ON ere.IDEQUIPOREQUERIDO = er.IDEQUIPOREQUERIDO
       WHERE 1
@@ -127,13 +153,14 @@ routes.get('/', (req, res) => {
       if (err) return res.send(err);
   
       conn.query(`
-      SELECT e.IDEJERCICIO, m.ALMACENAMIENTOMULTIMEDIA, t.NOMBRETIPOEJERCICIO, n.tituloniveldificultadejercicio,m.TIEMPOMULTIMEDIA, e.IDENTRENADOR, e.IDOBJETIVOMUSCULAR, o.NOMBREOBJETIVOSMUSCULARES,e.NOMBREEJERCICIO, e.PESOLEVANTADOEJERCICIO, e.REPETICIONESEJERCICIO, m.TIEMPOMULTIMEDIA AS TIEMPOREALIZACIONEJERCICIO, e.METEJERCICIO, 
+      SELECT e.IDEJERCICIO, e.IDMULTIMEDIA, m.TITULOMULTIMEDIA, m.DESCRIPCIONMULTIMEDIA,m.TIEMPOMULTIMEDIA, m.ALMACENAMIENTOMULTIMEDIA, m.OBSERVACIONMULTIMEDIA, e.IDTIPOEJERCICIO, t.NOMBRETIPOEJERCICIO, e.IDNIVELDIFICULTADEJERCICIO, n.tituloniveldificultadejercicio, e.IDENTRENADOR,per.IDROLUSUARIO, e.IDOBJETIVOMUSCULAR, e.NOMBREEJERCICIO, e.DESCRIPCIONEJERCICIO, e.INTRUCCIONESEJERCICIO, e.PESOLEVANTADOEJERCICIO, e.REPETICIONESEJERCICIO, e.METEJERCICIO, e.VARIACIONESMODIFICACIONEJERCICIOPROGRESO, e.OBSERVACIONESEJERCICIO, e.FECHACREACIONEJERCICIO, e.FECHAMODIFICACIONEJERCICIO, e.USUARIOCREACIONEJERCICIO, e.USUARIOMODIFICAICONEJERCICIO, e.ESTADOEJERCICIO,
+      GROUP_CONCAT(DISTINCT er.IDEQUIPOREQUERIDO ) AS ID_EQUIPOS_REQUERIDOS,
       GROUP_CONCAT(DISTINCT er.NOMBREEQUIPOREQUERIDO) AS TITULOS_EQUIPOS_REQUERIDOS
       FROM ejercicio AS e
-      JOIN objetivosmusculares AS o ON e.IDOBJETIVOMUSCULAR = o.IDOBJETIVOSMUSCULARES
       JOIN tipoejercicio AS t ON e.IDTIPOEJERCICIO = t.IDTIPOEJERCICIO
       JOIN niveldificultadejercicio AS n ON e.IDNIVELDIFICULTADEJERCICIO = n.IDNIVELDIFICULTADEJERCICIO
       JOIN multimedia AS m ON e.IDMULTIMEDIA = m.IDMULTIMEDIA
+      JOIN persona AS per ON e.IDENTRENADOR = per.IDPERSONA
       LEFT JOIN equiporequeridoejercicio AS ere ON e.IDEJERCICIO = ere.IDEJERCICIO
       LEFT JOIN equiporequerido AS er ON ere.IDEQUIPOREQUERIDO = er.IDEQUIPOREQUERIDO
       WHERE e.ESTADOEJERCICIO=1
@@ -182,12 +209,12 @@ routes.get('/', (req, res) => {
       if (err) return res.send(err);
   
       conn.query(`
-      SELECT p.IDEJERCICIO, p.IDUSUARIO, p.IDPROGRESO, p.FECHAREGISTROPROGRESO, p.STATUSPROGRESO,
+      SELECT p.IDEJERCICIO, p.IDUSUARIO, p.IDPROGRESO, p.FECHAREGISTROPROGRESO, p.STATUSPROGRESO, pr.IMAGEPERSONA,
       p.OBSERVACIONPROGRESO, p.METAALCANZADAPROGRESO, p.CALIFICACIONPROGRESO, pr.NICKNAMEPERSONA
       FROM progreso p
       JOIN usuario u ON p.IDUSUARIO = u.IDUSUARIO
       JOIN persona pr ON u.IDPERSONA = pr.IDPERSONA
-      WHERE p.IDEJERCICIO=?;
+      WHERE p.IDEJERCICIO=?
       `,[req.params.idEjercicio], (err, rows) => {
         if (err) return res.send(err);
         res.json(rows);
@@ -283,6 +310,7 @@ routes.get('/', (req, res) => {
   });
 
   routes.post('/CreateDataMultimedia/:nombre', (req, res) => {
+    console.log(req.body);
     req.getConnection((err, conn) => {
       if (err) return res.json(err);
       const titulo = `TITULO${req.params.nombre.toUpperCase()}`;
@@ -297,8 +325,10 @@ routes.get('/', (req, res) => {
       const statusValue = req.body[status];
       const tiempo = `TIEMPO${req.params.nombre.toUpperCase()}`;
       const tiempoValue = req.body[tiempo];
+      const identrenador = `IDENTRENADOR${req.params.nombre.toUpperCase()}`;
+      const identrenadorValue = req.body[identrenador];
   
-      conn.query('INSERT INTO ?? (??, ??, ??, ??, ??, ??) VALUES (?, ?, ?, ?, ?, ?)', [req.params.nombre, titulo, descripcion, almacenamiento, status,tiempo,observacion , tituloValue,descripcionValue,almacenamientoValue, statusValue,tiempoValue, observacionValue], (err, rows) => {
+      conn.query('INSERT INTO ?? (??, ??, ??, ??, ??, ??, ??) VALUES (?, ?, ?, ?, ?, ?, ?)', [req.params.nombre, titulo, descripcion, almacenamiento, status,tiempo,observacion ,identrenador, tituloValue,descripcionValue,almacenamientoValue, statusValue,tiempoValue, observacionValue,identrenadorValue], (err, rows) => {
         if (err) return res.json(err)
         res.json({ message: 'El registro ha sido creado.' });
       });
@@ -363,6 +393,7 @@ routes.get('/', (req, res) => {
   });
 
   routes.post('/CreateDataEjercicio', (req, res) => {
+    console.log(req.body);
     req.getConnection((err, conn) => {
       if (err) return res.json(err);
   
@@ -655,6 +686,8 @@ routes.get('/', (req, res) => {
   routes.post('/copyFiles-portadassesiones', (req, res) => {
     const sourceFileName = req.body.oldnameFile; // Nombre del primer archivo
     const targetFileName = req.body.newnameFile; // Nombre del segundo archivo
+    console.log(sourceFileName);
+    console.log(targetFileName);
   
     const sourcePath = path.join(__dirname, './media/rutinas/portadasrutinas/', sourceFileName);
     let targetPath = path.join(__dirname, './media/sesiones/portadassesiones/', targetFileName);

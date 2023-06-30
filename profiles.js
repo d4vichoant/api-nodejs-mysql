@@ -94,8 +94,72 @@ routes.get('/objetivospersonales',(req,res)=>{
   })
 })
 
-routes.post('/guardarDatos', (req, res) => {
+routes.get('/bookmarkpersona',(req,res)=>{
+  req.getConnection((err,conn)=>{
+      if(err) return res.send(err)
+      conn.query(`
+      SELECT b.IDBOOKMARK, b.IDEJERCICIO, b.IDUSUARIO, u.IDPERSONA
+        FROM bookmark AS b
+        JOIN usuario AS u ON b.IDUSUARIO = u.IDUSUARIO
+        JOIN persona AS p ON u.IDPERSONA = p.IDPERSONA;
+      `,(err,rows)=>{
+          if(err) return res.json(err)
+          res.json(rows)
+      })
+  })
+})
 
+routes.post('/bookmarkpersona', (req, res) => {
+  req.getConnection((err, conn) => {
+    if (err) return res.send(err);
+
+    conn.query(
+      `SELECT IDUSUARIO FROM usuario WHERE IDPERSONA = ?`,
+      [req.body.IDPERSONA],
+      (err, rows) => {
+        if (err) return res.json(err);
+        if (rows.length > 0) {
+          const IDUSUARIO = rows[0].IDUSUARIO;
+          conn.query(
+            `SELECT * FROM bookmark WHERE IDUSUARIO = ? AND IDEJERCICIO = ?`,
+            [IDUSUARIO, req.body.IDEJERCICIO],
+            (err, rows) => {
+              if (err) return res.json(err);
+              if (rows.length > 0) {
+                if (!req.body.STATUSBOOKMARK) {
+                  conn.query(
+                    `DELETE FROM bookmark WHERE IDUSUARIO = ? AND IDEJERCICIO = ?`,
+                    [IDUSUARIO, req.body.IDEJERCICIO],
+                    (err) => {
+                      if (err) return res.json(err);
+                    }
+                  );
+                  res.json({ message: 'Book Mark Eliminado' });
+                }
+              } else {
+                if (req.body.STATUSBOOKMARK) {
+                  conn.query(
+                    `INSERT INTO bookmark (IDUSUARIO, IDEJERCICIO) VALUES (?, ?)`,
+                    [IDUSUARIO, req.body.IDEJERCICIO],
+                    (err) => {
+                      if (err) return res.json(err);
+                    }
+                  );
+                  res.json({ message: 'Book Mark Guardado' });
+                }
+              }
+            }
+          );
+        } else {
+          res.json({ message: 'No se encontró el usuario correspondiente a la persona' });
+        }
+      }
+    );
+  });
+});
+
+
+routes.post('/guardarDatos', (req, res) => {
   // Iniciar la transacción
   req.getConnection((err, conn) => {
     if (err) {

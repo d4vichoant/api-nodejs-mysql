@@ -107,7 +107,7 @@ routes.get('/bookmarkpersona',(req,res)=>{
           res.json(rows)
       })
   })
-})
+});
 
 routes.post('/bookmarkpersona', (req, res) => {
   req.getConnection((err, conn) => {
@@ -134,7 +134,7 @@ routes.post('/bookmarkpersona', (req, res) => {
                       if (err) return res.json(err);
                     }
                   );
-                  res.json({ message: 'Book Mark Eliminado' });
+                  res.json({ message: 'Eliminado' });
                 }
               } else {
                 if (req.body.STATUSBOOKMARK) {
@@ -145,7 +145,320 @@ routes.post('/bookmarkpersona', (req, res) => {
                       if (err) return res.json(err);
                     }
                   );
-                  res.json({ message: 'Book Mark Guardado' });
+                  res.json({ message: 'Guardado' });
+                }
+              }
+            }
+          );
+        } else {
+          res.json({ message: 'No se encontró el usuario correspondiente a la persona' });
+        }
+      }
+    );
+  });
+});
+routes.get('/bookmarkrutinas',(req,res)=>{
+  req.getConnection((err,conn)=>{
+      if(err) return res.send(err)
+      conn.query(`
+      SELECT b.IDBOOKMARKRUTINAS, b.IDRUTINA, b.IDUSUARIO, u.IDPERSONA
+        FROM  bookmarkrutinas AS b
+        JOIN usuario AS u ON b.IDUSUARIO = u.IDUSUARIO
+        JOIN persona AS p ON u.IDPERSONA = p.IDPERSONA;
+      `,(err,rows)=>{
+          if(err) return res.json(err)
+          res.json(rows)
+      })
+  })
+});
+
+routes.post('/bookmarkrutinas', (req, res) => {
+  req.getConnection((err, conn) => {
+    if (err) return res.send(err);
+
+    conn.query(
+      `SELECT IDUSUARIO FROM usuario WHERE IDPERSONA = ?`,
+      [req.body.IDPERSONA],
+      (err, rows) => {
+        if (err) return res.json(err);
+        if (rows.length > 0) {
+          const IDUSUARIO = rows[0].IDUSUARIO;
+          conn.query(
+            `SELECT * FROM bookmarkrutinas WHERE IDUSUARIO = ? AND IDRUTINA = ?`,
+            [IDUSUARIO, req.body.IDEJERCICIO],
+            (err, rows) => {
+              if (err) return res.json(err);
+              if (rows.length > 0) {
+                if (!req.body.STATUSBOOKMARK) {
+                  conn.query(
+                    `DELETE FROM bookmarkrutinas WHERE IDUSUARIO = ? AND IDRUTINA = ?`,
+                    [IDUSUARIO, req.body.IDEJERCICIO],
+                    (err) => {
+                      if (err) return res.json(err);
+                    }
+                  );
+                  res.json({ message: 'Eliminado' });
+                }
+              } else {
+                if (req.body.STATUSBOOKMARK) {
+                  conn.query(
+                    `INSERT INTO bookmarkrutinas (IDUSUARIO, IDRUTINA) VALUES (?, ?)`,
+                    [IDUSUARIO, req.body.IDEJERCICIO],
+                    (err) => {
+                      if (err) return res.json(err);
+                    }
+                  );
+                  res.json({ message: 'Guardado' });
+                }
+              }
+            }
+          );
+        } else {
+          res.json({ message: 'No se encontró el usuario correspondiente a la persona' });
+        }
+      }
+    );
+  });
+});
+routes.get('/bookmarksesiones',(req,res)=>{
+  req.getConnection((err,conn)=>{
+      if(err) return res.send(err)
+      conn.query(`
+      SELECT b.IDBOOKMARKSESIONES, b.IDSESION, b.IDUSUARIO, u.IDPERSONA
+        FROM bookmarksesiones AS b
+        JOIN usuario AS u ON b.IDUSUARIO = u.IDUSUARIO
+        JOIN persona AS p ON u.IDPERSONA = p.IDPERSONA;
+      `,(err,rows)=>{
+          if(err) return res.json(err)
+          res.json(rows)
+      })
+  })
+});
+
+routes.post('/bookmarksesiones', (req, res) => {
+  req.getConnection((err, conn) => {
+    if (err) return res.send(err);
+
+    conn.query(
+      `SELECT IDUSUARIO FROM usuario WHERE IDPERSONA = ?`,
+      [req.body.IDPERSONA],
+      (err, rows) => {
+        if (err) return res.json(err);
+        if (rows.length > 0) {
+          const IDUSUARIO = rows[0].IDUSUARIO;
+          conn.query(
+            `SELECT * FROM bookmarksesiones WHERE IDUSUARIO = ? AND IDSESION = ?`,
+            [IDUSUARIO, req.body.IDEJERCICIO],
+            (err, rows) => {
+              if (err) return res.json(err);
+              if (rows.length > 0) {
+                if (!req.body.STATUSBOOKMARK) {
+                  conn.query(
+                    `DELETE FROM bookmarksesiones WHERE IDUSUARIO = ? AND IDSESION = ?`,
+                    [IDUSUARIO, req.body.IDEJERCICIO],
+                    (err) => {
+                      if (err) return res.json(err);
+                    }
+                  );
+                  res.json({ message: 'Eliminado' });
+                }
+              } else {
+                if (req.body.STATUSBOOKMARK) {
+                  conn.query(
+                    `INSERT INTO bookmarksesiones (IDUSUARIO, IDSESION) VALUES (?, ?)`,
+                    [IDUSUARIO, req.body.IDEJERCICIO],
+                    (err) => {
+                      if (err) return res.json(err);
+                    }
+                  );
+                  res.json({ message: 'Guardado' });
+                }
+              }
+            }
+          );
+        } else {
+          res.json({ message: 'No se encontró el usuario correspondiente a la persona' });
+        }
+      }
+    );
+  });
+});
+routes.get('/likeobjetivomusculares',(req,res)=>{
+  req.getConnection((err,conn)=>{
+      if(err) return res.send(err)
+      conn.query(`
+      SELECT b.IDLIKEOBJETIVOMUSCULARES , b.IDOBJETIVOSMUSCULARES, b.IDUSUARIO, u.IDPERSONA
+        FROM likeobjetivomusculares AS b
+        JOIN usuario AS u ON b.IDUSUARIO = u.IDUSUARIO
+        JOIN persona AS p ON u.IDPERSONA = p.IDPERSONA;
+      `,(err,rows)=>{
+          if(err) return res.json(err)
+          res.json(rows)
+      })
+  })
+});
+routes.post('/likeobjetivomusculares', (req, res) => {
+  req.getConnection((err, conn) => {
+    if (err) return res.send(err);
+
+    conn.query(
+      `SELECT IDUSUARIO FROM usuario WHERE IDPERSONA = ?`,
+      [req.body.IDPERSONA],
+      (err, rows) => {
+        if (err) return res.json(err);
+        if (rows.length > 0) {
+          const IDUSUARIO = rows[0].IDUSUARIO;
+          conn.query(
+            `SELECT * FROM likeobjetivomusculares WHERE IDUSUARIO = ? AND IDOBJETIVOSMUSCULARES  = ?`,
+            [IDUSUARIO, req.body.IDEJERCICIO],
+            (err, rows) => {
+              if (err) return res.json(err);
+              if (rows.length > 0) {
+                if (!req.body.STATUSBOOKMARK) {
+                  conn.query(
+                    `DELETE FROM likeobjetivomusculares WHERE IDUSUARIO = ? AND IDOBJETIVOSMUSCULARES  = ?`,
+                    [IDUSUARIO, req.body.IDEJERCICIO],
+                    (err) => {
+                      if (err) return res.json(err);
+                    }
+                  );
+                  res.json({ message: 'Eliminado' });
+                }
+              } else {
+                if (req.body.STATUSBOOKMARK) {
+                  conn.query(
+                    `INSERT INTO likeobjetivomusculares (IDUSUARIO, IDOBJETIVOSMUSCULARES ) VALUES (?, ?)`,
+                    [IDUSUARIO, req.body.IDEJERCICIO],
+                    (err) => {
+                      if (err) return res.json(err);
+                    }
+                  );
+                  res.json({ message: 'Guardado' });
+                }
+              }
+            }
+          );
+        } else {
+          res.json({ message: 'No se encontró el usuario correspondiente a la persona' });
+        }
+      }
+    );
+  });
+});
+
+routes.get('/likeobjetivopersonal',(req,res)=>{
+  req.getConnection((err,conn)=>{
+      if(err) return res.send(err)
+      conn.query(`
+      SELECT b.IDLIKEOBJETIVOPERSONAL , b.IDOBJETIVOSPERSONALES, b.IDUSUARIO, u.IDPERSONA
+        FROM likeobjetivopersonal AS b
+        JOIN usuario AS u ON b.IDUSUARIO = u.IDUSUARIO
+        JOIN persona AS p ON u.IDPERSONA = p.IDPERSONA;
+      `,(err,rows)=>{
+          if(err) return res.json(err)
+          res.json(rows)
+      })
+  })
+});
+routes.post('/likeobjetivopersonal', (req, res) => {
+  req.getConnection((err, conn) => {
+    if (err) return res.send(err);
+
+    conn.query(
+      `SELECT IDUSUARIO FROM usuario WHERE IDPERSONA = ?`,
+      [req.body.IDPERSONA],
+      (err, rows) => {
+        if (err) return res.json(err);
+        if (rows.length > 0) {
+          const IDUSUARIO = rows[0].IDUSUARIO;
+          conn.query(
+            `SELECT * FROM likeobjetivopersonal WHERE IDUSUARIO = ? AND IDOBJETIVOSPERSONALES = ?`,
+            [IDUSUARIO, req.body.IDEJERCICIO],
+            (err, rows) => {
+              if (err) return res.json(err);
+              if (rows.length > 0) {
+                if (!req.body.STATUSBOOKMARK) {
+                  conn.query(
+                    `DELETE FROM likeobjetivopersonal WHERE IDUSUARIO = ? AND IDOBJETIVOSPERSONALES = ?`,
+                    [IDUSUARIO, req.body.IDEJERCICIO],
+                    (err) => {
+                      if (err) return res.json(err);
+                    }
+                  );
+                  res.json({ message: 'Eliminado' });
+                }
+              } else {
+                if (req.body.STATUSBOOKMARK) {
+                  conn.query(
+                    `INSERT INTO likeobjetivopersonal (IDUSUARIO, IDOBJETIVOSPERSONALES) VALUES (?, ?)`,
+                    [IDUSUARIO, req.body.IDEJERCICIO],
+                    (err) => {
+                      if (err) return res.json(err);
+                    }
+                  );
+                  res.json({ message: 'Guardado' });
+                }
+              }
+            }
+          );
+        } else {
+          res.json({ message: 'No se encontró el usuario correspondiente a la persona' });
+        }
+      }
+    );
+  });
+});
+routes.get('/liketejercicio',(req,res)=>{
+  req.getConnection((err,conn)=>{
+      if(err) return res.send(err)
+      conn.query(`
+      SELECT b.IDLIKETEJERCICIO, b.IDTIPOEJERCICIO, b.IDUSUARIO, u.IDPERSONA
+        FROM liketejercicio AS b
+        JOIN usuario AS u ON b.IDUSUARIO = u.IDUSUARIO
+        JOIN persona AS p ON u.IDPERSONA = p.IDPERSONA;
+      `,(err,rows)=>{
+          if(err) return res.json(err)
+          res.json(rows)
+      })
+  })
+});
+routes.post('/liketejercicio', (req, res) => {
+  req.getConnection((err, conn) => {
+    if (err) return res.send(err);
+
+    conn.query(
+      `SELECT IDUSUARIO FROM usuario WHERE IDPERSONA = ?`,
+      [req.body.IDPERSONA],
+      (err, rows) => {
+        if (err) return res.json(err);
+        if (rows.length > 0) {
+          const IDUSUARIO = rows[0].IDUSUARIO;
+          conn.query(
+            `SELECT * FROM liketejercicio WHERE IDUSUARIO = ? AND 	IDTIPOEJERCICIO  = ?`,
+            [IDUSUARIO, req.body.IDEJERCICIO],
+            (err, rows) => {
+              if (err) return res.json(err);
+              if (rows.length > 0) {
+                if (!req.body.STATUSBOOKMARK) {
+                  conn.query(
+                    `DELETE FROM liketejercicio WHERE IDUSUARIO = ? AND IDTIPOEJERCICIO  = ?`,
+                    [IDUSUARIO, req.body.IDEJERCICIO],
+                    (err) => {
+                      if (err) return res.json(err);
+                    }
+                  );
+                  res.json({ message: 'Eliminado' });
+                }
+              } else {
+                if (req.body.STATUSBOOKMARK) {
+                  conn.query(
+                    `INSERT INTO liketejercicio (IDUSUARIO, IDTIPOEJERCICIO) VALUES (?, ?)`,
+                    [IDUSUARIO, req.body.IDEJERCICIO],
+                    (err) => {
+                      if (err) return res.json(err);
+                    }
+                  );
+                  res.json({ message: 'Eliminado' });
                 }
               }
             }
@@ -467,7 +780,6 @@ routes.post('/updateEntrenante', (req, res) => {
                     return res.status(500).json({ error: 'Error al confirmar la transacción' + err });
                   });
                 }
-
                 res.json({ message: '¡Datos actualizados correctamente!' });
               });
             });
@@ -568,7 +880,6 @@ const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024; // Convertir a bytes
 const TARGET_WIDTH = 100; // Ancho deseado en píxeles
 
 routes.post('/subir-imagen-perfile', async (req, res) => {
-  //console.log("hola");
   if (!req.files || Object.keys(req.files).length === 0) {
     return res.status(400).json({ error: 'No se ha seleccionado ningún archivo' });
   }
@@ -644,6 +955,22 @@ routes.post('/:nickname', (req, res) => {
   req.getConnection((err, conn) => {
     if (err) return res.send(err);
     conn.query('SELECT `IDPERSONA`, `IDGENERO`, `IDROLUSUARIO`, `NOMBREPERSONA`, `APELLDOPERSONA`, `CORREOPERSONA`, `NICKNAMEPERSONA`, `IMAGEPERSONA`,`FECHANACIMIENTOPERSONA` FROM `persona` WHERE NICKNAMEPERSONA = ? AND ESTADOPERSONA = true LIMIT 1', [req.params.nickname], (err, rows) => {
+      if (err) return res.json(err);
+      res.json(rows);
+    });
+  });
+});
+
+
+routes.post('/usuarioFind/:nickname', (req, res) => {
+  req.getConnection((err, conn) => {
+    if (err) return res.send(err);
+    conn.query(`
+    SELECT p.IDPERSONA, p.IDGENERO, p.IDROLUSUARIO, p.NOMBREPERSONA, p.APELLDOPERSONA, p.CORREOPERSONA, p.NICKNAMEPERSONA, p.IMAGEPERSONA, p.FECHANACIMIENTOPERSONA,  u.IDPROFESION, u.IDFRECUENCIA, u.PESOUSUARIO
+      FROM persona p
+      JOIN usuario u ON p.IDPERSONA = u.IDPERSONA
+      WHERE p.NICKNAMEPERSONA = ? AND p.ESTADOPERSONA = true;
+    `, [req.params.nickname], (err, rows) => {
       if (err) return res.json(err);
       res.json(rows);
     });

@@ -312,7 +312,6 @@ routes.get('/', (req, res) => {
   });
 
   routes.post('/CreateDataMultimedia/:nombre', (req, res) => {
-    console.log(req.body);
     req.getConnection((err, conn) => {
       if (err) return res.json(err);
       const titulo = `TITULO${req.params.nombre.toUpperCase()}`;
@@ -395,7 +394,6 @@ routes.get('/', (req, res) => {
   });
 
   routes.post('/CreateDataEjercicio', (req, res) => {
-    console.log(req.body);
     req.getConnection((err, conn) => {
       if (err) return res.json(err);
   
@@ -688,8 +686,7 @@ routes.get('/', (req, res) => {
   routes.post('/copyFiles-portadassesiones', (req, res) => {
     const sourceFileName = req.body.oldnameFile; // Nombre del primer archivo
     const targetFileName = req.body.newnameFile; // Nombre del segundo archivo
-    console.log(sourceFileName);
-    console.log(targetFileName);
+
   
     const sourcePath = path.join(__dirname, './media/rutinas/portadasrutinas/', sourceFileName);
     let targetPath = path.join(__dirname, './media/sesiones/portadassesiones/', targetFileName);

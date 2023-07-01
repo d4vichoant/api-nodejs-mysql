@@ -209,7 +209,6 @@ routes.get('/rutinas',(req,res)=>{
   });
 
   routes.post('/CreateDataSesion', (req, res) => {
-    console.log(req.body);
     req.getConnection((err, conn) => {
       if (err) return res.json(err);
       const data = req.body; 

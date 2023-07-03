@@ -16,7 +16,7 @@ const secretKey = process.env.SECRET_KEY;
 
 app.set('port', process.env.PORT || 9600  )
 const dbOptions ={
-    /* host: 'localhost',
+/*     host: 'localhost',
     port: 3306,
     user: 'root',
     password: '',

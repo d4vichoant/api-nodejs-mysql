@@ -73,6 +73,20 @@ routes.get('/especialidadentrenador',(req,res)=>{
       })
   })
 })
+routes.get('/objetivospersonalesusuario/:idUsuario',(req,res)=>{
+  req.getConnection((err,conn)=>{
+    if(err) return res.send(err)
+    conn.query(`
+    SELECT IDUSUARIO, GROUP_CONCAT(IDOBJETIVOSPERSONALES) AS IDOBJETIVOSPERSONALES
+      FROM objetivospersonalesusuario
+      WHERE IDUSUARIO = ?
+      GROUP BY IDUSUARIO;
+    `,[req.params.idUsuario],(err,rows)=>{
+        if(err) return res.send(err)
+        res.json(rows)
+    })
+})
+})
 
 routes.get('/passwordHash/:nickname',(req,res)=>{
   req.getConnection((err,conn)=>{
@@ -966,7 +980,7 @@ routes.post('/usuarioFind/:nickname', (req, res) => {
   req.getConnection((err, conn) => {
     if (err) return res.send(err);
     conn.query(`
-    SELECT p.IDPERSONA, p.IDGENERO, p.IDROLUSUARIO, p.NOMBREPERSONA, p.APELLDOPERSONA, p.CORREOPERSONA, p.NICKNAMEPERSONA, p.IMAGEPERSONA, p.FECHANACIMIENTOPERSONA,  u.IDPROFESION, u.IDFRECUENCIA, u.PESOUSUARIO
+    SELECT p.IDPERSONA, p.IDGENERO,u.IDUSUARIO, p.IDROLUSUARIO, p.NOMBREPERSONA, p.APELLDOPERSONA, p.CORREOPERSONA, p.NICKNAMEPERSONA, p.IMAGEPERSONA, p.FECHANACIMIENTOPERSONA,  u.IDPROFESION, u.IDFRECUENCIA, u.PESOUSUARIO
       FROM persona p
       JOIN usuario u ON p.IDPERSONA = u.IDPERSONA
       WHERE p.NICKNAMEPERSONA = ? AND p.ESTADOPERSONA = true;

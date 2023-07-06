@@ -113,9 +113,10 @@ routes.get('/bookmarkpersona',(req,res)=>{
       if(err) return res.send(err)
       conn.query(`
       SELECT b.IDBOOKMARK, b.IDEJERCICIO, b.IDUSUARIO, u.IDPERSONA
-        FROM bookmark AS b
-        JOIN usuario AS u ON b.IDUSUARIO = u.IDUSUARIO
-        JOIN persona AS p ON u.IDPERSONA = p.IDPERSONA;
+      FROM bookmark AS b
+      JOIN usuario AS u ON b.IDUSUARIO = u.IDUSUARIO
+      JOIN persona AS p ON u.IDPERSONA = p.IDPERSONA
+      ORDER BY b.FECHACREACIONBOOKMARK DESC;
       `,(err,rows)=>{
           if(err) return res.json(err)
           res.json(rows)
@@ -178,7 +179,8 @@ routes.get('/bookmarkrutinas',(req,res)=>{
       SELECT b.IDBOOKMARKRUTINAS, b.IDRUTINA, b.IDUSUARIO, u.IDPERSONA
         FROM  bookmarkrutinas AS b
         JOIN usuario AS u ON b.IDUSUARIO = u.IDUSUARIO
-        JOIN persona AS p ON u.IDPERSONA = p.IDPERSONA;
+        JOIN persona AS p ON u.IDPERSONA = p.IDPERSONA
+        ORDER BY b.FECHACREACIONBOOKMARKRUTINAS DESC;
       `,(err,rows)=>{
           if(err) return res.json(err)
           res.json(rows)
@@ -241,7 +243,8 @@ routes.get('/bookmarksesiones',(req,res)=>{
       SELECT b.IDBOOKMARKSESIONES, b.IDSESION, b.IDUSUARIO, u.IDPERSONA
         FROM bookmarksesiones AS b
         JOIN usuario AS u ON b.IDUSUARIO = u.IDUSUARIO
-        JOIN persona AS p ON u.IDPERSONA = p.IDPERSONA;
+        JOIN persona AS p ON u.IDPERSONA = p.IDPERSONA
+        ORDER BY b.FECHACREACIONBOOKMARKSESIONES DESC;
       `,(err,rows)=>{
           if(err) return res.json(err)
           res.json(rows)
@@ -304,7 +307,8 @@ routes.get('/likeobjetivomusculares',(req,res)=>{
       SELECT b.IDLIKEOBJETIVOMUSCULARES , b.IDOBJETIVOSMUSCULARES, b.IDUSUARIO, u.IDPERSONA
         FROM likeobjetivomusculares AS b
         JOIN usuario AS u ON b.IDUSUARIO = u.IDUSUARIO
-        JOIN persona AS p ON u.IDPERSONA = p.IDPERSONA;
+        JOIN persona AS p ON u.IDPERSONA = p.IDPERSONA
+        ORDER BY b.FECHACREACIONLIKEOBJETIVOMUSCULARES DESC;
       `,(err,rows)=>{
           if(err) return res.json(err)
           res.json(rows)
@@ -367,7 +371,8 @@ routes.get('/likeobjetivopersonal',(req,res)=>{
       SELECT b.IDLIKEOBJETIVOPERSONAL , b.IDOBJETIVOSPERSONALES, b.IDUSUARIO, u.IDPERSONA
         FROM likeobjetivopersonal AS b
         JOIN usuario AS u ON b.IDUSUARIO = u.IDUSUARIO
-        JOIN persona AS p ON u.IDPERSONA = p.IDPERSONA;
+        JOIN persona AS p ON u.IDPERSONA = p.IDPERSONA
+        ORDER BY b.FECHACREACIONLIKEOBJETIVOPERSONAL DESC;
       `,(err,rows)=>{
           if(err) return res.json(err)
           res.json(rows)
@@ -429,7 +434,8 @@ routes.get('/liketejercicio',(req,res)=>{
       SELECT b.IDLIKETEJERCICIO, b.IDTIPOEJERCICIO, b.IDUSUARIO, u.IDPERSONA
         FROM liketejercicio AS b
         JOIN usuario AS u ON b.IDUSUARIO = u.IDUSUARIO
-        JOIN persona AS p ON u.IDPERSONA = p.IDPERSONA;
+        JOIN persona AS p ON u.IDPERSONA = p.IDPERSONA
+        ORDER BY b.FECHACREACIONLIKEEJERCICIO DESC;
       `,(err,rows)=>{
           if(err) return res.json(err)
           res.json(rows)
@@ -690,8 +696,6 @@ routes.post('/login', (req, res) => {
   });
 });
 
-
-  
 routes.get('/check-nickname/:nickname', (req, res) => {
     const nickname = req.params.nickname;
     req.getConnection((err, conn) => {
@@ -932,7 +936,38 @@ routes.post('/subir-imagen-perfile', async (req, res) => {
   }
 });
 
+routes.get('/getcomentariosentrenador/:idEntrenador', (req, res) => {
+  req.getConnection((err, conn) => {
+    if (err) return res.send(err);
+    conn.query(`
+      SELECT c.IDCOMENTARIOENTRENADOR, c.IDENTRENADOR, u.IDUSUARIO, c.FECHACREACIONCOMENTARIOENTRENADOR,
+        c.PUNTUACIONCOMENTARIOENTRENADOR, c.OPINIONCOMENTARIOENTRENADOR, p.IMAGEPERSONA
+      FROM comentariosentrenador c
+      JOIN usuario u ON c.IDUSUARIO = u.IDUSUARIO
+      JOIN persona p ON u.IDPERSONA = p.IDPERSONA
+      WHERE c.IDENTRENADOR=?
+      ORDER by c.FECHACREACIONCOMENTARIOENTRENADOR DESC;
+    `, [req.params.idEntrenador], (err, rows) => {
+      if (err) return res.json(err);
+      res.json(rows);
+    });
+  });
+});
 
+routes.post('/insertarcomentarioentrenador', (req, res) => {
+  const { IDUSUARIO,IDENTRENADOR, PUNTUACIONCOMENTARIOENTRENADOR, OPINIONCOMENTARIOENTRENADOR } = req.body;
+
+  req.getConnection((err, conn) => {
+    if (err) return res.send(err);
+    conn.query(`
+      INSERT INTO comentariosentrenador ( IDUSUARIO,IDENTRENADOR, PUNTUACIONCOMENTARIOENTRENADOR, OPINIONCOMENTARIOENTRENADOR)
+      VALUES (?, ?, ?, ?);
+    `, [ IDUSUARIO, IDENTRENADOR,PUNTUACIONCOMENTARIOENTRENADOR, OPINIONCOMENTARIOENTRENADOR], (err, result) => {
+      if (err) return res.json(err);
+      res.json({ message: 'Gracias por tu Opinion' });
+    });
+  });
+});
 
 
 routes.post('/uploadImagenPerfileText/', (req, res) => {
@@ -975,8 +1010,8 @@ routes.post('/:nickname', (req, res) => {
   });
 });
 
-
 routes.post('/usuarioFind/:nickname', (req, res) => {
+
   req.getConnection((err, conn) => {
     if (err) return res.send(err);
     conn.query(`

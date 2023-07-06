@@ -38,7 +38,6 @@ routes.get('/',(req,res)=>{
 routes.get('/entrenadorBasic', (req, res) => {
   req.getConnection((err, conn) => {
     if (err) return res.send(err);
-
     conn.query(`
     SELECT
     p.IDPERSONA,
@@ -63,6 +62,35 @@ routes.get('/entrenadorBasic', (req, res) => {
         AND e.ACTIVACIONENTRENADOR = 1
       )
     );
+  `, (err, rows) => {
+      if (err) return res.send(err);
+      res.json(rows);
+    });
+  });
+  
+});
+
+routes.get('/entrenadorBasicEjercicioRutina', (req, res) => {
+  req.getConnection((err, conn) => {
+    if (err) return res.send(err);
+    conn.query(`
+    SELECT p.IDPERSONA, p.IDGENERO, p.IDROLUSUARIO, p.NOMBREPERSONA, p.APELLDOPERSONA, p.FECHANACIMIENTOPERSONA,p.NICKNAMEPERSONA,
+    p.IMAGEPERSONA, e.IDENTRENADOR, e.EXPERIENCIAENTRENADOR, e.TARIFASENTRENADOR, e.DESCRIPCIONENTRENADOR,
+    (SELECT COUNT(ej.IDEJERCICIO) FROM ejercicio ej WHERE ej.IDENTRENADOR = p.IDPERSONA) AS NUMERO_EJERCICIOS,
+    (SELECT COUNT(ps.IDSESION) FROM programarsesion ps WHERE ps.IDENTRENADOR = p.IDPERSONA) AS NUMERO_SESIONES_PROGRAMADAS,
+    (SELECT COUNT(ru.IDRUTINA) FROM rutina ru WHERE ru.IDENTRENADOR = p.IDPERSONA) AS NUMERO_RUTINAS,e.CERTIFICACIONESENTRENADOR,
+    GROUP_CONCAT(ex.tituloESPECIALIDADENTRENADOR) AS tituloESPECIALIDADENTRENADOR
+    FROM persona p
+    JOIN entrenador e ON p.IDPERSONA = e.IDPERSONA
+    LEFT JOIN especialidadentrenadorentrenador es ON e.IDENTRENADOR = es.IDENTRENADOR
+    LEFT JOIN especialidadentrenador ex ON es.idespecialidadentrenador = ex.idespecialidadentrenador
+    WHERE (e.ACTIVACIONENTRENADOR = false OR e.ACTIVACIONENTRENADOR = true)
+    AND e.IDENTRENADOR IS NOT NULL
+    AND p.IDROLUSUARIO = 2
+    GROUP BY p.IDPERSONA, e.IDENTRENADOR, p.IDGENERO, p.IDROLUSUARIO, p.NOMBREPERSONA,
+          p.APELLDOPERSONA, p.FECHANACIMIENTOPERSONA, p.IMAGEPERSONA, e.EXPERIENCIAENTRENADOR,
+          e.DESCRIPCIONENTRENADOR, e.TARIFASENTRENADOR
+    ORDER BY p.NOMBREPERSONA
   `, (err, rows) => {
       if (err) return res.send(err);
       res.json(rows);

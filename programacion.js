@@ -395,6 +395,51 @@ routes.get('/rutinas',(req,res)=>{
       });
     });
   });
+
+  routes.post('/Contrato', (req, res) => {
+    req.getConnection((err, conn) => {
+      if (err) return res.json(err);
+  
+      const data = req.body; // Obtener los datos del cuerpo de la solicitud
+  
+      // Definir las columnas y los valores correspondientes
+      const columns = [
+        'IDENTRENADOR',
+        'IDUSUARIO ',
+        'MESESCONTRATACION'
+      ];
+      const values = [
+        data.idENTRENADOR,
+        data.idUSUARIO,
+        data.MESESCONTRATACION
+      ];
+  
+      conn.query('INSERT INTO contratacion(' + columns.join(',') + ') VALUES ?', [[values]], (err, rows) => {
+        if (err) {
+          return res.status(500).json({ error: 'Error al Crear Datos' + err });
+        }
+        res.json({ message:  'Suscipción Realizada'  });
+      });
+    });
+  });
+routes.get('/obtenerContratoUsuario/:idUsuario/:idEntrenador', (req, res) => {
+  req.getConnection((err, conn) => {
+    if (err) return res.send(err);
+    conn.query(`
+    SELECT IDCONTRATACION, IDENTRENADOR, IDUSUARIO, MESESCONTRATACION, 
+          DATE_ADD(FECHADECONTRATACION, INTERVAL MESESCONTRATACION MONTH) AS FECHAFINAL
+    FROM contratacion
+    WHERE  DATE_ADD(FECHADECONTRATACION, INTERVAL MESESCONTRATACION MONTH) > NOW() 
+    AND IDUSUARIO=? AND IDENTRENADOR=?;
+    `, [req.params.idUsuario,req.params.idEntrenador], (err, rows) => {
+      if (err) return res.send(err);
+      if( rows.length >0)
+        res.json({ active: true });
+      else
+        res.json({ active: false });
+    });
+  });
+});
   
 
   module.exports = routes;

@@ -258,11 +258,30 @@ routes.get('/', (req, res) => {
       const statusValue = req.body[status];
       const id = `ID${req.params.nombre.toUpperCase()}`;
       const idValue = req.body[id];
-  
-      conn.query('UPDATE ?? SET   ?? = ?,  ?? = ?, ?? = ?, ??=? WHERE ?? = ?', [req.params.nombre, nombre, nombreValue,descripcion,descripcionValue, status, statusValue,observacion,observacionValue, id, idValue], (err, rows) => {
-        if (err) return res.json(err)
-        res.json({ message: 'La activación ha sido actualizada.' });
-      });
+
+      const image =`IMAGE${req.params.nombre.toUpperCase()}`;
+      if(req.body[image])
+      {
+        imageValue=req.body[image];
+        conn.query('UPDATE ?? SET   ?? = ?,  ?? = ?, ?? = ?, ??=?, ??=? WHERE ?? = ?', [req.params.nombre, nombre, nombreValue,descripcion,descripcionValue, status, statusValue,observacion,observacionValue, image,imageValue, id, idValue], (err, rows) => {
+          if (err) return res.json(err)
+          res.json({ message: 'Datos subidos ha sido actualizada.' });
+        });
+      }else{
+        const imagen =`IMAGEN${req.params.nombre.toUpperCase()}`;
+        if(req.body[imagen]){
+          imagenValue=req.body[imagen];
+          conn.query('UPDATE ?? SET   ?? = ?,  ?? = ?, ?? = ?, ??=?, ??=? WHERE ?? = ?', [req.params.nombre, nombre, nombreValue,descripcion,descripcionValue, status, statusValue,observacion,observacionValue, imagen,imagenValue, id, idValue], (err, rows) => {
+            if (err) return res.json(err)
+            res.json({ message: 'Datos subidos ha sido actualizada.' });
+          });
+        }else{
+          conn.query('UPDATE ?? SET   ?? = ?,  ?? = ?, ?? = ?, ??=? WHERE ?? = ?', [req.params.nombre, nombre, nombreValue,descripcion,descripcionValue, status, statusValue,observacion,observacionValue, id, idValue], (err, rows) => {
+            if (err) return res.json(err)
+            res.json({ message: 'Datos subidos ha sido actualizada.' });
+          });
+        }
+      }
     });
   });
 
@@ -277,11 +296,29 @@ routes.get('/', (req, res) => {
       const observacionValue = req.body[observacion];
       const status = `STATUS${req.params.nombre.toUpperCase()}`;
       const statusValue = req.body[status];
-  
-      conn.query('INSERT INTO ?? (??, ??, ??, ??) VALUES (?, ?, ?, ?)', [req.params.nombre, nombre, descripcion, status, observacion, nombreValue, descripcionValue, statusValue, observacionValue], (err, rows) => {
-        if (err) return res.json(err)
-        res.json({ message: 'El registro ha sido creado.' });
-      });
+      const image =`IMAGE${req.params.nombre.toUpperCase()}`;
+      if(req.body[image])
+      {
+        imageValue=req.body[image];
+        conn.query('INSERT INTO ?? (??, ??, ??, ??, ??) VALUES (?, ?, ?, ?, ?)', [req.params.nombre, nombre, descripcion, status, observacion,image, nombreValue, descripcionValue, statusValue, observacionValue,imageValue], (err, rows) => {
+          if (err) return res.json(err)
+          res.json({ message: 'El registro ha sido creado.' });
+        });
+      }else{
+        const imagen =`IMAGEN${req.params.nombre.toUpperCase()}`;
+        if(req.body[imagen]){
+          imagenValue=req.body[imagen];
+          conn.query('INSERT INTO ?? (??, ??, ??, ??, ??) VALUES (?, ?, ?, ?, ?)', [req.params.nombre, nombre, descripcion, status, observacion,imagen, nombreValue, descripcionValue, statusValue, observacionValue,imagenValue], (err, rows) => {
+            if (err) return res.json(err)
+            res.json({ message: 'El registro ha sido creado.' });
+          });
+        }else{
+          conn.query('INSERT INTO ?? (??, ??, ??, ??) VALUES (?, ?, ?, ?)', [req.params.nombre, nombre, descripcion, status, observacion, nombreValue, descripcionValue, statusValue, observacionValue], (err, rows) => {
+            if (err) return res.json(err)
+            res.json({ message: 'El registro ha sido creado.' });
+          });
+        }
+      }
     });
   });
 
@@ -305,7 +342,7 @@ routes.get('/', (req, res) => {
   
       conn.query('UPDATE ?? SET   ?? = ?,  ?? = ?, ?? = ?, ?? = ?, ?? = ?, ??=? WHERE ?? = ?', [req.params.nombre, titulo, tituloValue,descripcion,descripcionValue, almacenamiento,almacenamientoValue ,status, statusValue,observacion,observacionValue,tiempo,tiempoValue, id, idValue], (err, rows) => {
         if (err) return res.json(err)
-        res.json({ message: 'Los Datos ham sido actualizado.' });
+        res.json({ message: 'Los Datos han sido actualizado.' });
       });
     });
   });
@@ -600,7 +637,7 @@ routes.get('/', (req, res) => {
     }
   });
   const MAX_FILE_SIZE_MB = 1; // Tamaño máximo permitido en MB
-  const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024; // Convertir a bytes
+  const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024*2; // Convertir a bytes
   
   routes.post('/subir-imagen-rutinas', async (req, res) => {
 
@@ -668,6 +705,84 @@ routes.get('/', (req, res) => {
   
     // Mueve el archivo al directorio deseado
     const filePath = `./media/sesiones/portadassesiones/${newFileName}${ext}`;
+  
+    try {
+      const image = await Jimp.read(file.data);
+  
+      // Redimensionar manteniendo el aspecto y ajustar la calidad para reducir el tamaño
+      const resizedImage = image.resize(Jimp.AUTO, 1024).quality(70);
+  
+      await resizedImage.writeAsync(filePath);
+      res.json({ message: 'Imagen subida correctamente', fileName: newFileName });
+    } catch (error) {
+      res.status(500).json({ error: 'Error al subir el archivo' + error });
+    }
+  });
+  routes.post('/subir-imagen-tipoEjercicio', async (req, res) => {
+
+    if (!req.files || Object.keys(req.files).length === 0) {
+      return res.status(400).json({ error: 'No se ha seleccionado ningún archivo' });
+    }
+  
+    const file = req.files.file;
+    const fileSizeBytes = file.size;
+  
+    if (fileSizeBytes > MAX_FILE_SIZE_BYTES) {
+      return res.status(400).json({ error: 'El tamaño de la imagen debe ser menor a 1 MB' });
+    }
+  
+    const fileName = file.name.replace(/\.[^/.]+$/, ""); // Eliminar la extensión del nombre de archivo
+    const ext = path.extname(file.name);
+    let newFileName = fileName;
+    let counter = 1;
+  
+    // Verificar si el nombre de archivo ya existe
+    while (fs.existsSync(`./media/tipoEjercicio/${newFileName}${ext}`)) {
+      newFileName = `${fileName}_${counter}`;
+      counter++;
+    }
+  
+    // Mueve el archivo al directorio deseado
+    const filePath = `./media/tipoEjercicio/${newFileName}${ext}`;
+  
+    try {
+      const image = await Jimp.read(file.data);
+  
+      // Redimensionar manteniendo el aspecto y ajustar la calidad para reducir el tamaño
+      const resizedImage = image.resize(Jimp.AUTO, 1024).quality(70);
+  
+      await resizedImage.writeAsync(filePath);
+      res.json({ message: 'Imagen subida correctamente', fileName: newFileName });
+    } catch (error) {
+      res.status(500).json({ error: 'Error al subir el archivo' + error });
+    }
+  });
+  routes.post('/subir-imagen-objetivomuscular', async (req, res) => {
+
+    if (!req.files || Object.keys(req.files).length === 0) {
+      return res.status(400).json({ error: 'No se ha seleccionado ningún archivo' });
+    }
+  
+    const file = req.files.file;
+    const fileSizeBytes = file.size;
+  
+    if (fileSizeBytes > MAX_FILE_SIZE_BYTES) {
+      return res.status(400).json({ error: 'El tamaño de la imagen debe ser menor a 1 MB' });
+    }
+  
+    const fileName = file.name.replace(/\.[^/.]+$/, ""); // Eliminar la extensión del nombre de archivo
+    const ext = path.extname(file.name);
+    let newFileName = fileName;
+    let counter = 1;
+  
+    // Verificar si el nombre de archivo ya existe
+    while (fs.existsSync(`./media/objetivomuscular/${newFileName}${ext}`)) {
+      newFileName = `${fileName}_${counter}`;
+      counter++;
+    }
+  
+    // Mueve el archivo al directorio deseado
+    const filePath = `./media/objetivomuscular/${newFileName}${ext}`;
   
     try {
       const image = await Jimp.read(file.data);

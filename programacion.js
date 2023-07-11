@@ -440,6 +440,99 @@ routes.get('/obtenerContratoUsuario/:idUsuario/:idEntrenador', (req, res) => {
     });
   });
 });
+
+routes.get('/obtenerContratoEntrenadoresUsuario/:idUsuario', (req, res) => {
+  req.getConnection((err, conn) => {
+    if (err) return res.send(err);
+    conn.query(`
+      SELECT c.IDCONTRATACION, c.IDENTRENADOR, c.IDUSUARIO, c.MESESCONTRATACION, 
+          DATE_ADD(c.FECHADECONTRATACION, INTERVAL c.MESESCONTRATACION MONTH) AS FECHAFINAL,
+          e.IDPERSONA
+      FROM contratacion c
+      JOIN entrenador e ON c.IDENTRENADOR = e.IDENTRENADOR
+      WHERE DATE_ADD(c.FECHADECONTRATACION, INTERVAL c.MESESCONTRATACION MONTH) > NOW() 
+      AND c.IDUSUARIO = ?;
+    `, [req.params.idUsuario], (err, rows) => {
+      if (err) return res.send(err);
+      res.json(rows);
+    });
+  });
+});
+
+routes.post('/addespecialidadentrenadorentrenador/', (req, res) => {
+  req.getConnection((err, conn) => {
+    if (err) return res.json(err);
+    if(req.body.type==="INSERT"){
+      conn.query('INSERT INTO `especialidadentrenadorentrenador`(`IDENTRENADOR`, `idespecialidadentrenador`) VALUES (?,?)', [req.body.idEntrenador,req.body.idEspecialidad], (err,rows)=>{
+        if(err) return res.json(err)
+        res.json({ message: 'Actualizacion realizada correctamente.' });
+      });
+    }else{
+      conn.query('DELETE FROM `especialidadentrenadorentrenador` WHERE `IDENTRENADOR` = ? AND `idespecialidadentrenador` = ?', [req.body.idEntrenador,req.body.idEspecialidad], (err, rows) => {
+        if (err) return res.json(err);
+        res.json({ message: 'Eliminación realizada correctamente.' });
+      });
+    }
+  });
+});
+
+routes.post('/addespecialidadentrenador/', (req, res) => {
+  req.getConnection((err, conn) => {
+    if (err) return res.json(err);
+    if(req.body.certificionentrenador){
+      conn.query('UPDATE `entrenador` SET `CERTIFICACIONESENTRENADOR`=? WHERE `IDENTRENADOR` = ?', [req.body.certificionentrenador,req.body.idEntrenador], (err, rows) => {
+        if (err) return res.json(err);
+        res.json({ message: 'Cambios realizadas correctamente.' });
+      });
+    }else{
+      if( req.body.acercaEntrenador){
+        conn.query('UPDATE `entrenador` SET `DESCRIPCIONENTRENADOR`=? WHERE `IDENTRENADOR` = ?', [req.body.acercaEntrenador,req.body.idEntrenador], (err, rows) => {
+          if (err) return res.json(err);
+          res.json({ message: 'Cambios realizadas correctamente.' });
+        });
+      }else{
+        if(req.body.TARIFASENTRENADOR){
+          conn.query('UPDATE `entrenador` SET `TARIFASENTRENADOR`=? WHERE `IDENTRENADOR` = ?', [req.body.TARIFASENTRENADOR,req.body.idEntrenador], (err, rows) => {
+            if (err) return res.json(err);
+            res.json({ message: 'Cambios realizadas correctamente.' });
+          });
+        }else{
+          conn.query('UPDATE `entrenador` SET `EXPERIENCIAENTRENADOR`=? WHERE `IDENTRENADOR` = ?', [req.body.EXPERIENCIAENTRENADOR,req.body.idEntrenador], (err, rows) => {
+            if (err) return res.json(err);
+            res.json({ message: 'Cambios realizadas correctamente.' });
+          });
+        }
+      }
+    }
+  });
+});
+
+routes.get('/obtenerContratoUsuarioPorEntrenador/:idEntrenador', (req, res) => {
+  req.getConnection((err, conn) => {
+    if (err) return res.send(err);
+    conn.query(`
+      SELECT c.IDCONTRATACION, c.IDENTRENADOR, c.IDUSUARIO, c.MESESCONTRATACION, c.FECHADECONTRATACION,
+          DATE_ADD(c.FECHADECONTRATACION, INTERVAL c.MESESCONTRATACION MONTH) AS FECHAFINAL,
+          u.IDPERSONA, u.IDPROFESION, u.IDFRECUENCIA, f.TituloFrecuenciaEjercicio AS TituloFrecuenciaEjercicio,
+          u.PESOUSUARIO, u.ALTURAUSUARIO, u.MEDIDASCORPORALESUSUARIO,
+          GROUP_CONCAT(o.IDOBJETIVOSPERSONALES SEPARATOR ',') AS IDOBJETIVOSPERSONALES,
+          GROUP_CONCAT(o.DESCRIPCIONOBJETIVOSPERSONALES SEPARATOR ',') AS DESCRIPCIONOBJETIVOSPERSONALES,
+          p.NOMBREPERSONA, p.APELLDOPERSONA,  p.NICKNAMEPERSONA, p.IMAGEPERSONA
+      FROM contratacion c
+      JOIN usuario u ON c.IDUSUARIO = u.IDUSUARIO
+      LEFT JOIN objetivospersonalesusuario ou ON u.IDUSUARIO = ou.IDUSUARIO
+      LEFT JOIN objetivospersonales o ON ou.IDOBJETIVOSPERSONALES = o.IDOBJETIVOSPERSONALES
+      JOIN persona p ON u.IDPERSONA = p.IDPERSONA
+      JOIN frecuenciaejercicio f ON u.IDFRECUENCIA = f.IDFRECUENCIA
+      WHERE DATE_ADD(c.FECHADECONTRATACION, INTERVAL c.MESESCONTRATACION MONTH) > NOW()
+      AND c.IDENTRENADOR = ?
+      GROUP BY c.IDCONTRATACION, c.IDENTRENADOR, c.IDUSUARIO, c.MESESCONTRATACION, FECHAFINAL, u.IDPERSONA, u.IDPROFESION, u.IDFRECUENCIA, IDFRECUENCIA, u.PESOUSUARIO, u.ALTURAUSUARIO, u.MEDIDASCORPORALESUSUARIO,  p.NOMBREPERSONA, p.APELLDOPERSONA, p.NICKNAMEPERSONA, p.IMAGEPERSONA;
+      `, [req.params.idEntrenador], (err, rows) => {
+      if (err) return res.send(err);
+      res.json(rows)
+    });
+  });
+});
   
 
   module.exports = routes;

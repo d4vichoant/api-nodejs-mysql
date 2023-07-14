@@ -14,7 +14,7 @@ const cors = require('cors');
 
 const secretKey = process.env.SECRET_KEY;
 
-app.set('port', process.env.PORT || 9600  )
+app.set('port', process.env.PORT || 8080  )
 const dbOptions ={
 /*     host: 'localhost',
     port: 3306,

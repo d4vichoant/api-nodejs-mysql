@@ -459,6 +459,16 @@ routes.get('/obtenerContratoEntrenadoresUsuario/:idUsuario', (req, res) => {
   });
 });
 
+routes.get('/contarTypes/:nombreTable',(req,res)=>{
+  req.getConnection((err,conn)=>{
+      if(err) return res.send(err)
+      conn.query('SELECT COUNT(*) AS total_datos FROM ?? WHERE 1;',[req.params.nombreTable],(err,rows)=>{
+          if(err) return res.json(err)
+          res.json(rows)
+      })
+  })
+})
+
 routes.post('/addespecialidadentrenadorentrenador/', (req, res) => {
   req.getConnection((err, conn) => {
     if (err) return res.json(err);

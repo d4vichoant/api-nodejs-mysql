@@ -208,17 +208,31 @@ routes.get('/', (req, res) => {
   routes.get('/obtenerComentariosporEjercicio/:idEjercicio', (req, res) => {
     req.getConnection((err, conn) => {
       if (err) return res.send(err);
-  
       conn.query(`
       SELECT p.IDEJERCICIO, p.IDUSUARIO, p.IDPROGRESO, p.FECHAREGISTROPROGRESO, p.STATUSPROGRESO, pr.IMAGEPERSONA,
-      p.OBSERVACIONPROGRESO, p.METAALCANZADAPROGRESO, p.CALIFICACIONPROGRESO, pr.NICKNAMEPERSONA
+       p.CALIFICACIONPROGRESO, pr.NICKNAMEPERSONA
       FROM progreso p
       JOIN usuario u ON p.IDUSUARIO = u.IDUSUARIO
       JOIN persona pr ON u.IDPERSONA = pr.IDPERSONA
-      WHERE p.IDEJERCICIO=?
+      WHERE p.IDEJERCICIO=? ORDER BY p.FECHAREGISTROPROGRESO DESC
       `,[req.params.idEjercicio], (err, rows) => {
         if (err) return res.send(err);
         res.json(rows);
+      });
+    });
+  });
+
+  routes.post('/insertarCalificaionEjercicio', (req, res) => {
+    req.getConnection((err, conn) => {
+      if (err) return res.send(err);
+      const { IDEJERCICIO, IDUSUARIO, CALIFICACIONPROGRESO } = req.body;
+      const query = `
+        INSERT INTO progreso (IDEJERCICIO, IDUSUARIO, CALIFICACIONPROGRESO,STATUSPROGRESO)
+        VALUES (?, ?, ?,true)
+      `;
+      conn.query(query, [IDEJERCICIO, IDUSUARIO, CALIFICACIONPROGRESO], (err, result) => {
+        if (err) return res.send(err);
+        res.status(200).json({ message: 'Gracias por Enviar' });
       });
     });
   });

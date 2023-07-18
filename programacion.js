@@ -469,80 +469,241 @@ routes.get('/contarTypes/:nombreTable',(req,res)=>{
   })
 })
 
-routes.post('/addespecialidadentrenadorentrenador/', (req, res) => {
-  req.getConnection((err, conn) => {
-    if (err) return res.json(err);
-    if(req.body.type==="INSERT"){
-      conn.query('INSERT INTO `especialidadentrenadorentrenador`(`IDENTRENADOR`, `idespecialidadentrenador`) VALUES (?,?)', [req.body.idEntrenador,req.body.idEspecialidad], (err,rows)=>{
-        if(err) return res.json(err)
-        res.json({ message: 'Actualizacion realizada correctamente.' });
-      });
-    }else{
-      conn.query('DELETE FROM `especialidadentrenadorentrenador` WHERE `IDENTRENADOR` = ? AND `idespecialidadentrenador` = ?', [req.body.idEntrenador,req.body.idEspecialidad], (err, rows) => {
-        if (err) return res.json(err);
-        res.json({ message: 'Eliminación realizada correctamente.' });
-      });
-    }
+  routes.post('/addespecialidadentrenadorentrenador/', (req, res) => {
+    req.getConnection((err, conn) => {
+      if (err) return res.json(err);
+      if(req.body.type==="INSERT"){
+        conn.query('INSERT INTO `especialidadentrenadorentrenador`(`IDENTRENADOR`, `idespecialidadentrenador`) VALUES (?,?)', [req.body.idEntrenador,req.body.idEspecialidad], (err,rows)=>{
+          if(err) return res.json(err)
+          res.json({ message: 'Actualizacion realizada correctamente.' });
+        });
+      }else{
+        conn.query('DELETE FROM `especialidadentrenadorentrenador` WHERE `IDENTRENADOR` = ? AND `idespecialidadentrenador` = ?', [req.body.idEntrenador,req.body.idEspecialidad], (err, rows) => {
+          if (err) return res.json(err);
+          res.json({ message: 'Eliminación realizada correctamente.' });
+        });
+      }
+    });
   });
-});
 
-routes.post('/addespecialidadentrenador/', (req, res) => {
-  req.getConnection((err, conn) => {
-    if (err) return res.json(err);
-    if(req.body.certificionentrenador){
-      conn.query('UPDATE `entrenador` SET `CERTIFICACIONESENTRENADOR`=? WHERE `IDENTRENADOR` = ?', [req.body.certificionentrenador,req.body.idEntrenador], (err, rows) => {
-        if (err) return res.json(err);
-        res.json({ message: 'Cambios realizadas correctamente.' });
-      });
-    }else{
-      if( req.body.acercaEntrenador){
-        conn.query('UPDATE `entrenador` SET `DESCRIPCIONENTRENADOR`=? WHERE `IDENTRENADOR` = ?', [req.body.acercaEntrenador,req.body.idEntrenador], (err, rows) => {
+  routes.post('/addespecialidadentrenador/', (req, res) => {
+    req.getConnection((err, conn) => {
+      if (err) return res.json(err);
+      if(req.body.certificionentrenador){
+        conn.query('UPDATE `entrenador` SET `CERTIFICACIONESENTRENADOR`=? WHERE `IDENTRENADOR` = ?', [req.body.certificionentrenador,req.body.idEntrenador], (err, rows) => {
           if (err) return res.json(err);
           res.json({ message: 'Cambios realizadas correctamente.' });
         });
       }else{
-        if(req.body.TARIFASENTRENADOR){
-          conn.query('UPDATE `entrenador` SET `TARIFASENTRENADOR`=? WHERE `IDENTRENADOR` = ?', [req.body.TARIFASENTRENADOR,req.body.idEntrenador], (err, rows) => {
+        if( req.body.acercaEntrenador){
+          conn.query('UPDATE `entrenador` SET `DESCRIPCIONENTRENADOR`=? WHERE `IDENTRENADOR` = ?', [req.body.acercaEntrenador,req.body.idEntrenador], (err, rows) => {
             if (err) return res.json(err);
             res.json({ message: 'Cambios realizadas correctamente.' });
           });
         }else{
-          conn.query('UPDATE `entrenador` SET `EXPERIENCIAENTRENADOR`=? WHERE `IDENTRENADOR` = ?', [req.body.EXPERIENCIAENTRENADOR,req.body.idEntrenador], (err, rows) => {
-            if (err) return res.json(err);
-            res.json({ message: 'Cambios realizadas correctamente.' });
-          });
+          if(req.body.TARIFASENTRENADOR){
+            conn.query('UPDATE `entrenador` SET `TARIFASENTRENADOR`=? WHERE `IDENTRENADOR` = ?', [req.body.TARIFASENTRENADOR,req.body.idEntrenador], (err, rows) => {
+              if (err) return res.json(err);
+              res.json({ message: 'Cambios realizadas correctamente.' });
+            });
+          }else{
+            conn.query('UPDATE `entrenador` SET `EXPERIENCIAENTRENADOR`=? WHERE `IDENTRENADOR` = ?', [req.body.EXPERIENCIAENTRENADOR,req.body.idEntrenador], (err, rows) => {
+              if (err) return res.json(err);
+              res.json({ message: 'Cambios realizadas correctamente.' });
+            });
+          }
         }
       }
-    }
-  });
-});
-
-routes.get('/obtenerContratoUsuarioPorEntrenador/:idEntrenador', (req, res) => {
-  req.getConnection((err, conn) => {
-    if (err) return res.send(err);
-    conn.query(`
-      SELECT c.IDCONTRATACION, c.IDENTRENADOR, c.IDUSUARIO, c.MESESCONTRATACION, c.FECHADECONTRATACION,
-          DATE_ADD(c.FECHADECONTRATACION, INTERVAL c.MESESCONTRATACION MONTH) AS FECHAFINAL,
-          u.IDPERSONA, u.IDPROFESION, u.IDFRECUENCIA, f.TituloFrecuenciaEjercicio AS TituloFrecuenciaEjercicio,
-          u.PESOUSUARIO, u.ALTURAUSUARIO, u.MEDIDASCORPORALESUSUARIO,
-          GROUP_CONCAT(o.IDOBJETIVOSPERSONALES SEPARATOR ',') AS IDOBJETIVOSPERSONALES,
-          GROUP_CONCAT(o.DESCRIPCIONOBJETIVOSPERSONALES SEPARATOR ',') AS DESCRIPCIONOBJETIVOSPERSONALES,
-          p.NOMBREPERSONA, p.APELLDOPERSONA,  p.NICKNAMEPERSONA, p.IMAGEPERSONA
-      FROM contratacion c
-      JOIN usuario u ON c.IDUSUARIO = u.IDUSUARIO
-      LEFT JOIN objetivospersonalesusuario ou ON u.IDUSUARIO = ou.IDUSUARIO
-      LEFT JOIN objetivospersonales o ON ou.IDOBJETIVOSPERSONALES = o.IDOBJETIVOSPERSONALES
-      JOIN persona p ON u.IDPERSONA = p.IDPERSONA
-      JOIN frecuenciaejercicio f ON u.IDFRECUENCIA = f.IDFRECUENCIA
-      WHERE DATE_ADD(c.FECHADECONTRATACION, INTERVAL c.MESESCONTRATACION MONTH) > NOW()
-      AND c.IDENTRENADOR = ?
-      GROUP BY c.IDCONTRATACION, c.IDENTRENADOR, c.IDUSUARIO, c.MESESCONTRATACION, FECHAFINAL, u.IDPERSONA, u.IDPROFESION, u.IDFRECUENCIA, IDFRECUENCIA, u.PESOUSUARIO, u.ALTURAUSUARIO, u.MEDIDASCORPORALESUSUARIO,  p.NOMBREPERSONA, p.APELLDOPERSONA, p.NICKNAMEPERSONA, p.IMAGEPERSONA;
-      `, [req.params.idEntrenador], (err, rows) => {
-      if (err) return res.send(err);
-      res.json(rows)
     });
   });
-});
+
+  routes.get('/obtenerContratoUsuarioPorEntrenador/:idEntrenador', (req, res) => {
+    req.getConnection((err, conn) => {
+      if (err) return res.send(err);
+      conn.query(`
+        SELECT c.IDCONTRATACION, c.IDENTRENADOR, c.IDUSUARIO, c.MESESCONTRATACION, c.FECHADECONTRATACION,
+            DATE_ADD(c.FECHADECONTRATACION, INTERVAL c.MESESCONTRATACION MONTH) AS FECHAFINAL,
+            u.IDPERSONA, u.IDPROFESION, u.IDFRECUENCIA, f.TituloFrecuenciaEjercicio AS TituloFrecuenciaEjercicio,
+            u.PESOUSUARIO, u.ALTURAUSUARIO, u.MEDIDASCORPORALESUSUARIO,
+            GROUP_CONCAT(o.IDOBJETIVOSPERSONALES SEPARATOR ',') AS IDOBJETIVOSPERSONALES,
+            GROUP_CONCAT(o.DESCRIPCIONOBJETIVOSPERSONALES SEPARATOR ',') AS DESCRIPCIONOBJETIVOSPERSONALES,
+            p.NOMBREPERSONA, p.APELLDOPERSONA,  p.NICKNAMEPERSONA, p.IMAGEPERSONA
+        FROM contratacion c
+        JOIN usuario u ON c.IDUSUARIO = u.IDUSUARIO
+        LEFT JOIN objetivospersonalesusuario ou ON u.IDUSUARIO = ou.IDUSUARIO
+        LEFT JOIN objetivospersonales o ON ou.IDOBJETIVOSPERSONALES = o.IDOBJETIVOSPERSONALES
+        JOIN persona p ON u.IDPERSONA = p.IDPERSONA
+        JOIN frecuenciaejercicio f ON u.IDFRECUENCIA = f.IDFRECUENCIA
+        WHERE DATE_ADD(c.FECHADECONTRATACION, INTERVAL c.MESESCONTRATACION MONTH) > NOW()
+        AND c.IDENTRENADOR = ?
+        GROUP BY c.IDCONTRATACION, c.IDENTRENADOR, c.IDUSUARIO, c.MESESCONTRATACION, FECHAFINAL, u.IDPERSONA, u.IDPROFESION, u.IDFRECUENCIA, IDFRECUENCIA, u.PESOUSUARIO, u.ALTURAUSUARIO, u.MEDIDASCORPORALESUSUARIO,  p.NOMBREPERSONA, p.APELLDOPERSONA, p.NICKNAMEPERSONA, p.IMAGEPERSONA;
+        `, [req.params.idEntrenador], (err, rows) => {
+        if (err) return res.send(err);
+        res.json(rows)
+      });
+    });
+  });
+
+  routes.post('/createDataProgresoUsuario', (req, res) => {
+    req.getConnection((err, conn) => {
+      if (err) return res.json(err);
+      const data = req.body;
+      const columns = [
+        'IDUSUARIO',
+        'progress_percentage',
+        'progress_show',
+      ];
+      const values = [
+        data.IDUSUARIO,
+        data.progress_percentage,
+        data.progress_show,
+      ];
+
+      if (data.IDSESION !== null && data.IDSESION !== undefined) {
+        columns.push('IDSESION');
+        values.push(data.IDSESION);
+      }
+
+      if (data.IDEJERCICIO !== null || data.IDEJERCICIO !== undefined) {
+        columns.push('IDEJERCICIO');
+        values.push(data.IDEJERCICIO);
+      }
+
+      if (data.IDRUTINA !== null ||data.IDRUTINA !== undefined) {
+        columns.push('IDRUTINA');
+        values.push(data.IDRUTINA);
+      }
+
+      if (data.progress_numeroEjercicio !== null && data.progress_numeroEjercicio !== undefined) {
+        columns.push('progress_numeroEjercicio');
+        values.push(data.progress_numeroEjercicio);
+      }
+
+      if (data.progress_numeroRutina !== null && data.progress_numeroRutina !== undefined) {
+        columns.push('progress_numeroRutina');
+        values.push(data.progress_numeroRutina);
+      }
+
+      if (data.IDPROGRESOUSUARIO !== null &&  data.IDPROGRESOUSUARIO !== undefined ) {
+        // Realizar actualización
+        conn.query(
+          'SELECT * FROM progresoUsuario WHERE IDPROGRESOUSUARIO = ?',
+          [data.IDPROGRESOUSUARIO],
+          (err, rows) => {
+            if (err) {
+              return res.status(500).json({ error: 'Error al buscar datos ' + err });
+            }
+  
+            if (rows.length > 0) {
+              if (data.progress_seconds !== null && data.progress_seconds !== undefined) {
+                columns.push('progress_seconds');
+                values.push(sumarTiempos(data.progress_seconds,rows[0].progress_seconds));
+              }
+              conn.query(
+                'UPDATE progresoUsuario SET ' + columns.map(column => `${column} = ?`).join(', ') + ' WHERE IDPROGRESOUSUARIO = ?',
+                [...values, data.IDPROGRESOUSUARIO],
+                (err, rows) => {
+                  if (err) {
+                    return res.status(500).json({ error: 'Error al actualizar datos ' + err });
+                  }
+                  res.json({ IDPROGRESOUSUARIO: data.IDPROGRESOUSUARIO });
+                }
+              );
+            } else {
+              if (data.progress_seconds !== null && data.progress_seconds !== undefined) {
+                columns.push('progress_seconds');
+                values.push(data.progress_seconds);
+              }
+              conn.query('INSERT INTO progresoUsuario (' + columns.join(',') + ') VALUES ?',
+                [[values]],
+                (err, rows) => {
+                  if (err) {
+                    return res.status(500).json({ error: 'Error al insertar datos ' + err });
+                  }
+                  const insertedId = rows.insertId;
+                  res.json({ IDPROGRESOUSUARIO: insertedId });
+                }
+              );
+            }
+          }
+        );
+      } else {
+        if (data.progress_seconds !== null && data.progress_seconds !== undefined) {
+          columns.push('progress_seconds');
+          values.push(data.progress_seconds);
+        }
+        conn.query('INSERT INTO progresoUsuario (' + columns.join(',') + ') VALUES ?',
+          [[values]],
+          (err, rows) => {
+            if (err) {
+              return res.status(500).json({ error: 'Error al insertar datos ' + err });
+            }
+            const insertedId = rows.insertId;
+            res.json({ IDPROGRESOUSUARIO: insertedId });
+          }
+        );
+      }
+    });
+  });
+
+  routes.get('/obtenerProgresousuario/:IDUSUARIO', (req, res) => {
+
+    req.getConnection((err, conn) => {
+      if (err) return res.send(err);
+      conn.query(`
+      SELECT pu.IDPROGRESOUSUARIO, pu.IDEJERCICIO, pu.IDSESION, pu.IDRUTINA, pu.IDUSUARIO, pu.progress_seconds, pu.progress_percentage, pu.progress_numeroEjercicio, pu.progress_show, pu.progress_dateNow, pu.progress_numeroRutina,
+            e.NOMBREEJERCICIO, e.DESCRIPCIONEJERCICIO,
+            ps.NOMBRESESION, ps.IMAGESESION,
+            r.NOMBRERUTINA, r.IMAGENRUTINA,
+            m.ALMACENAMIENTOMULTIMEDIA, m.STATUSMULTIMEDIA, e.ESTADOEJERCICIO, r.STATUSRUTINA, ps.STATUSSESION
+      FROM progresousuario pu
+      LEFT JOIN ejercicio e ON pu.IDEJERCICIO = e.IDEJERCICIO
+      LEFT JOIN programarsesion ps ON pu.IDSESION = ps.IDSESION
+      LEFT JOIN rutina r ON pu.IDRUTINA = r.IDRUTINA
+      LEFT JOIN multimedia m ON e.IDMULTIMEDIA = m.IDMULTIMEDIA
+      WHERE pu.IDUSUARIO = ? AND pu.progress_show = true
+      AND (m.STATUSMULTIMEDIA IS NULL OR m.STATUSMULTIMEDIA = true)
+      AND (e.ESTADOEJERCICIO IS NULL OR e.ESTADOEJERCICIO = true)
+      AND (r.STATUSRUTINA IS NULL OR r.STATUSRUTINA = true)
+      AND (ps.STATUSSESION IS NULL OR ps.STATUSSESION = true)
+      GROUP BY pu.IDEJERCICIO, pu.IDSESION, pu.IDRUTINA
+      ORDER BY MAX(pu.progress_dateNow) DESC;
+
+      `, [req.params.IDUSUARIO], (err, rows) => {
+        if (err) return res.json(err);
+        res.json(rows);
+      });
+    });
+  });
+
+
+
+  function sumarTiempos(tiempo1, tiempo2) {
+    // Convertir los tiempos a segundos
+    const segundos1 = convertirASegundos(tiempo1);
+    const segundos2 = convertirASegundos(tiempo2);
+  
+    // Sumar los segundos
+    const totalSegundos = segundos1 + segundos2;
+  
+    // Convertir el resultado a formato "horas:minutos:segundos"
+    const resultado = convertirATiempo(totalSegundos);
+  
+    return resultado;
+  }
+  
+  function convertirASegundos(tiempo) {
+    const [horas, minutos, segundos] = tiempo.split(':').map(Number);
+    return horas * 3600 + minutos * 60 + segundos;
+  }
+  
+  function convertirATiempo(segundos) {
+    const horas = Math.floor(segundos / 3600);
+    const minutos = Math.floor((segundos % 3600) / 60);
+    const segundosRestantes = segundos % 60;
+    return `${horas}:${minutos}:${segundosRestantes}`;
+  }
+  
   
 
   module.exports = routes;

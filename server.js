@@ -21,10 +21,10 @@ const dbOptions ={
     user: 'root',
     password: '',
     database: 'homefitgo' */
-    host: 'mysql-135324-0.cloudclusters.net',
-    port: 19385,
+    host: 'mysql-136301-0.cloudclusters.net',
+    port: 14005,
     user: 'admin',
-    password: 'LvLSUCzP',
+    password: 'ljSBozcB',
     database: 'homefitgo'
 }
 

@@ -46,6 +46,29 @@ routes.get('/rutinas',(req,res)=>{
         })
     })
   });
+  routes.get('/rutinasActivate/:idRutina',(req,res)=>{
+    req.getConnection((err,conn)=>{
+        if(err) return res.send(err)
+        conn.query(`
+        SELECT r.IDRUTINA, r.IDENTRENADOR, p.NICKNAMEPERSONA, p.IDROLUSUARIO, r.IDTIPOEJERCICIORUTINA, t.NOMBRETIPOEJERCICIO,
+            r.IDOBJETIVOSPERSONALESRUTINA, o.DESCRIPCIONOBJETIVOSPERSONALES,
+                r.NOMBRERUTINA, r.DESCRIPCIONRUTINA, r.DURACIONRUTINA, r.IMAGENRUTINA,
+                r.OBSERVACIONRUTINA, r.FECHACREACIONRUTINA, r.FECHAMODIFICACIONRUTINA,
+                r.USUARIOCREACIONRUTINA, r.USUARIOMODIFICAIONRUTINA, r.COMENTARIOSRUTINA,
+                r.STATUSRUTINA, GROUP_CONCAT(re.IDEJERCICIO SEPARATOR ',') AS IDEJERCICIOS
+        FROM rutina r
+        LEFT JOIN rutinasdeejercicios re ON r.IDRUTINA = re.IDRUTINA
+        JOIN tipoejercicio t ON r.IDTIPOEJERCICIORUTINA = t.IDTIPOEJERCICIO
+        JOIN persona p ON r.IDENTRENADOR = p.IDPERSONA
+        JOIN objetivospersonales o ON r.IDOBJETIVOSPERSONALESRUTINA = o.IDOBJETIVOSPERSONALES 
+        WHERE r.STATUSRUTINA=1 AND r.IDRUTINA=?
+        GROUP BY r.IDRUTINA;
+        `,[req.params.idRutina],(err,rows)=>{
+            if(err) return res.send(err)
+            res.json(rows)
+        })
+    })
+  });
   routes.get('/rutinasActivatebyObjetive/:idObjetive',(req,res)=>{
     req.getConnection((err,conn)=>{
         if(err) return res.send(err)
@@ -145,6 +168,30 @@ routes.get('/rutinas',(req,res)=>{
         WHERE pr.STATUSSESION=1
         GROUP BY pr.IDSESION;
         `,(err,rows)=>{
+            if(err) return res.send(err)
+            res.json(rows)
+        })
+    })
+  });
+  routes.get('/sesionesActivate/:idSesiones',(req,res)=>{
+    req.getConnection((err,conn)=>{
+        if(err) return res.send(err)
+        conn.query(`
+        SELECT pr.IDSESION, pr.IDENTRENADOR, per.NICKNAMEPERSONA, pr.IDFRECUENCIASESION,per.IDPERSONA, per.IDROLUSUARIO,
+                COALESCE(f.TituloFrecuenciaEjercicio, null) AS TituloFrecuenciaEjercicio,
+                pr.IDPROFESIONSESION, COALESCE(p.DESCRIPCIONPROFESION, null) AS DESCRIPCIONPROFESION,
+                pr.IDOBJETIVOSPERSONALESSESION, COALESCE(o.DESCRIPCIONOBJETIVOSPERSONALES, null) AS DESCRIPCIONOBJETIVOSPERSONALES,
+                pr.NOMBRESESION, pr.IMAGESESION, pr.OBJETIVOSESION, pr.OBSERVACIONSESION,
+                pr.STATUSSESION, GROUP_CONCAT(pse.IDRUTINA SEPARATOR ',') AS IDRUTINAS
+        FROM programarsesion pr
+        LEFT JOIN programarsesionrutinas pse ON pr.IDSESION = pse.IDSESION
+        LEFT JOIN frecuenciaejercicio f ON pr.IDFRECUENCIASESION = f.IDFRECUENCIA
+        LEFT JOIN objetivospersonales o ON pr.IDOBJETIVOSPERSONALESSESION = o.IDOBJETIVOSPERSONALES
+        LEFT JOIN profesion p ON pr.IDPROFESIONSESION = p.IDPROFESION
+        JOIN persona per ON pr.IDENTRENADOR = per.IDPERSONA
+        WHERE pr.STATUSSESION=1 AND pr.IDSESION=?
+        GROUP BY pr.IDSESION;
+        `,[req.params.idSesiones],(err,rows)=>{
             if(err) return res.send(err)
             res.json(rows)
         })
@@ -550,11 +597,13 @@ routes.get('/contarTypes/:nombreTable',(req,res)=>{
       const data = req.body;
       const columns = [
         'IDUSUARIO',
+        'IDEJERCICIO',
         'progress_percentage',
         'progress_show',
       ];
       const values = [
         data.IDUSUARIO,
+        data.IDEJERCICIO,
         data.progress_percentage,
         data.progress_show,
       ];
@@ -563,28 +612,28 @@ routes.get('/contarTypes/:nombreTable',(req,res)=>{
         columns.push('IDSESION');
         values.push(data.IDSESION);
       }
-
+/* 
       if (data.IDEJERCICIO !== null || data.IDEJERCICIO !== undefined) {
         columns.push('IDEJERCICIO');
         values.push(data.IDEJERCICIO);
       }
-
+ */
       if (data.IDRUTINA !== null ||data.IDRUTINA !== undefined) {
         columns.push('IDRUTINA');
         values.push(data.IDRUTINA);
       }
 
-      if (data.progress_numeroEjercicio !== null && data.progress_numeroEjercicio !== undefined) {
+      if (data.progress_numeroEjercicio !== null || data.progress_numeroEjercicio !== undefined) {
         columns.push('progress_numeroEjercicio');
         values.push(data.progress_numeroEjercicio);
       }
 
-      if (data.progress_numeroRutina !== null && data.progress_numeroRutina !== undefined) {
+      if (data.progress_numeroRutina !== null || data.progress_numeroRutina !== undefined) {
         columns.push('progress_numeroRutina');
         values.push(data.progress_numeroRutina);
       }
 
-      if (data.IDPROGRESOUSUARIO !== null &&  data.IDPROGRESOUSUARIO !== undefined ) {
+      if (data.IDPROGRESOUSUARIO !== null ||  data.IDPROGRESOUSUARIO !== undefined ) {
         // Realizar actualización
         conn.query(
           'SELECT * FROM progresoUsuario WHERE IDPROGRESOUSUARIO = ?',

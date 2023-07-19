@@ -168,11 +168,35 @@ routes.get('/', (req, res) => {
       GROUP BY e.IDEJERCICIO;
     `, (err, rows) => {
         if (err) return res.send(err);
-  
         res.json(rows);
       });
     });
   });
+
+  routes.get('/ejercicioActivate/:idEjercicio', (req, res) => {
+    req.getConnection((err, conn) => {
+      if (err) return res.send(err);
+      conn.query(`
+      SELECT e.IDEJERCICIO, e.IDMULTIMEDIA, m.TITULOMULTIMEDIA, m.DESCRIPCIONMULTIMEDIA,m.TIEMPOMULTIMEDIA, m.ALMACENAMIENTOMULTIMEDIA, m.OBSERVACIONMULTIMEDIA, e.IDTIPOEJERCICIO, t.NOMBRETIPOEJERCICIO, e.IDNIVELDIFICULTADEJERCICIO, n.tituloniveldificultadejercicio, e.IDENTRENADOR,per.IDROLUSUARIO, e.IDOBJETIVOMUSCULAR,obm.NOMBREOBJETIVOSMUSCULARES, e.NOMBREEJERCICIO, e.DESCRIPCIONEJERCICIO, e.INTRUCCIONESEJERCICIO, e.PESOLEVANTADOEJERCICIO, e.REPETICIONESEJERCICIO, e.METEJERCICIO, e.VARIACIONESMODIFICACIONEJERCICIOPROGRESO, e.OBSERVACIONESEJERCICIO, e.FECHACREACIONEJERCICIO, e.FECHAMODIFICACIONEJERCICIO, e.USUARIOCREACIONEJERCICIO, e.USUARIOMODIFICAICONEJERCICIO, e.ESTADOEJERCICIO,
+      GROUP_CONCAT(DISTINCT er.IDEQUIPOREQUERIDO ) AS ID_EQUIPOS_REQUERIDOS,
+      GROUP_CONCAT(DISTINCT er.NOMBREEQUIPOREQUERIDO) AS TITULOS_EQUIPOS_REQUERIDOS
+      FROM ejercicio AS e
+      JOIN tipoejercicio AS t ON e.IDTIPOEJERCICIO = t.IDTIPOEJERCICIO
+      JOIN niveldificultadejercicio AS n ON e.IDNIVELDIFICULTADEJERCICIO = n.IDNIVELDIFICULTADEJERCICIO
+      JOIN multimedia AS m ON e.IDMULTIMEDIA = m.IDMULTIMEDIA
+      JOIN persona AS per ON e.IDENTRENADOR = per.IDPERSONA
+      JOIN objetivosmusculares obm ON e.IDOBJETIVOMUSCULAR = obm.IDOBJETIVOSMUSCULARES
+      LEFT JOIN equiporequeridoejercicio AS ere ON e.IDEJERCICIO = ere.IDEJERCICIO
+      LEFT JOIN equiporequerido AS er ON ere.IDEQUIPOREQUERIDO = er.IDEQUIPOREQUERIDO
+      WHERE e.ESTADOEJERCICIO=1 AND e.IDEJERCICIO=?
+      GROUP BY e.IDEJERCICIO;
+    `, [req.params.idEjercicio],(err, rows) => {
+        if (err) return res.send(err);
+        res.json(rows);
+      });
+    });
+  });
+
 
   routes.get('/preejercicio', (req, res) => {
     req.getConnection((err, conn) => {

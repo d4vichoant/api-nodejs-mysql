@@ -696,6 +696,76 @@ routes.post('/login', (req, res) => {
   });
 });
 
+routes.get('/obtenerPesoAltura/:idUsuario',(req,res)=>{
+  req.getConnection((err,conn)=>{
+      if(err) return res.send(err)
+      conn.query(`
+      SELECT  PESOUSUARIO, ALTURAUSUARIO FROM usuario WHERE IDUSUARIO =?
+      `,[req.params.idUsuario],(err,rows)=>{
+          if(err) return res.json(err)
+          res.json(rows)
+      })
+  })
+});
+
+routes.post('/actualizarPesoAltura/:idUsuario', (req, res) => {
+  const { idUsuario } = req.params;
+  const { ALTURAUSUARIO, PESOUSUARIO } = req.body;
+
+  req.getConnection((err, conn) => {
+    if (err) return res.send(err);
+
+    conn.query(
+      `UPDATE usuario SET PESOUSUARIO = ?, ALTURAUSUARIO = ? WHERE IDUSUARIO = ?`,
+      [PESOUSUARIO,ALTURAUSUARIO, idUsuario],
+      (err, result) => {
+        if (err) return res.json(err);
+        res.json({ message: 'Datos actualizados exitosamente.' });
+      }
+    );
+  });
+});
+
+routes.get('/obtenerPesoHistory/:idUsuario',(req,res)=>{
+  req.getConnection((err,conn)=>{
+      if(err) return res.send(err)
+      conn.query(`
+      SELECT ID_LOG_USUARIO_UPDATE_W_H, IDUSUARIO, PESOUSUARIO, ALTURAUSUARIO, update_date
+      FROM (
+          SELECT ID_LOG_USUARIO_UPDATE_W_H, IDUSUARIO, PESOUSUARIO, ALTURAUSUARIO, update_date,
+                 ROW_NUMBER() OVER (PARTITION BY DATE(update_date) ORDER BY update_date DESC) AS rn
+          FROM log_usuario_updates_w_h
+          WHERE IDUSUARIO = ?
+      ) AS subquery
+      WHERE rn = 1
+      ORDER BY update_date ASC;
+      `,[req.params.idUsuario],(err,rows)=>{
+          if(err) return res.json(err)
+          res.json(rows)
+      })
+  })
+});
+
+routes.get('/obtenerInformeBasic/:idUsuario',(req,res)=>{
+  req.getConnection((err,conn)=>{
+      if(err) return res.send(err)
+      conn.query(`
+      SELECT 
+          IDUSUARIO,
+          FORMAT(SUM(kcalEjercicio), 0) AS suma_kcalEjercicio,
+          TIME_FORMAT(SEC_TO_TIME(SUM(TIME_TO_SEC(progress_seconds))), '%H:%i:%s') AS suma_progress_seconds,
+          COUNT(*) AS NEjercios
+      FROM 
+          log_progresousuario
+      WHERE 
+          IDUSUARIO = ?;
+      `,[req.params.idUsuario],(err,rows)=>{
+          if(err) return res.json(err)
+          res.json(rows)
+      })
+  })
+});
+
 routes.get('/check-nickname/:nickname', (req, res) => {
     const nickname = req.params.nickname;
     req.getConnection((err, conn) => {

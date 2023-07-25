@@ -591,6 +591,25 @@ routes.get('/contarTypes/:nombreTable',(req,res)=>{
     });
   });
 
+  routes.get('/changeShowProgresoUsuario/:idprogresoUsuario/:progress_show', (req, res) => {
+    req.getConnection((err, conn) => {
+      if (err) return res.send(err);
+  
+      // Aquí realizamos la consulta UPDATE
+      conn.query('UPDATE progresousuario SET progress_show = ? WHERE idprogresoUsuario = ?;', [req.params.progress_show,req.params.idprogresoUsuario], (err, result) => {
+        if (err) return res.json(err);
+  
+        // Comprobar si se actualizó al menos un registro
+        if (result.affectedRows > 0) {
+          res.json({ message: 'Oculto realizado correctamente ' });
+        } else {
+          res.json({ message: 'No se puede ocultar ese ejercicio' });
+        }
+      });
+    });
+  });
+  
+
   routes.post('/createDataProgresoUsuario', (req, res) => {
     req.getConnection((err, conn) => {
       if (err) return res.json(err);

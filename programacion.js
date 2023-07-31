@@ -627,7 +627,7 @@ routes.get('/contarTypes/:nombreTable',(req,res)=>{
         data.progress_show,
       ];
 
-      if (data.IDSESION !== null && data.IDSESION !== undefined) {
+      if (data.IDSESION !== null && data.IDSESION !== undefined && data.IDSESION !== -1) {
         columns.push('IDSESION');
         values.push(data.IDSESION);
       }
@@ -637,25 +637,25 @@ routes.get('/contarTypes/:nombreTable',(req,res)=>{
         values.push(data.IDEJERCICIO);
       }
  */
-      if (data.IDRUTINA !== null ||data.IDRUTINA !== undefined) {
+      if (data.IDRUTINA !== null ||data.IDRUTINA !== undefined||data.IDRUTINA !== -1) {
         columns.push('IDRUTINA');
         values.push(data.IDRUTINA);
       }
 
-      if (data.progress_numeroEjercicio !== null || data.progress_numeroEjercicio !== undefined) {
+      if (data.progress_numeroEjercicio !== null || data.progress_numeroEjercicio !== undefined|| data.progress_numeroEjercicio !== -1) {
         columns.push('progress_numeroEjercicio');
         values.push(data.progress_numeroEjercicio);
       }
 
-      if (data.progress_numeroRutina !== null || data.progress_numeroRutina !== undefined) {
+      if (data.progress_numeroRutina !== null || data.progress_numeroRutina !== undefined || data.progress_numeroRutina !== -1) {
         columns.push('progress_numeroRutina');
         values.push(data.progress_numeroRutina);
       }
 
-      if (data.IDPROGRESOUSUARIO !== null ||  data.IDPROGRESOUSUARIO !== undefined ) {
+      if (data.IDPROGRESOUSUARIO !== null ||  data.IDPROGRESOUSUARIO !== undefined ||  data.IDPROGRESOUSUARIO !== -1 ) {
         // Realizar actualización
         conn.query(
-          'SELECT * FROM progresoUsuario WHERE IDPROGRESOUSUARIO = ?',
+          'SELECT * FROM progresousuario WHERE IDPROGRESOUSUARIO = ?',
           [data.IDPROGRESOUSUARIO],
           (err, rows) => {
             if (err) {
@@ -663,12 +663,12 @@ routes.get('/contarTypes/:nombreTable',(req,res)=>{
             }
   
             if (rows.length > 0) {
-              if (data.progress_seconds !== null && data.progress_seconds !== undefined) {
+              if (data.progress_seconds !== null && data.progress_seconds !== undefined  && data.progress_seconds !== -1) {
                 columns.push('progress_seconds');
                 values.push(sumarTiempos(data.progress_seconds,rows[0].progress_seconds));
               }
               conn.query(
-                'UPDATE progresoUsuario SET ' + columns.map(column => `${column} = ?`).join(', ') + ' WHERE IDPROGRESOUSUARIO = ?',
+                'UPDATE progresousuario SET ' + columns.map(column => `${column} = ?`).join(', ') + ' WHERE IDPROGRESOUSUARIO = ?',
                 [...values, data.IDPROGRESOUSUARIO],
                 (err, rows) => {
                   if (err) {
@@ -678,11 +678,11 @@ routes.get('/contarTypes/:nombreTable',(req,res)=>{
                 }
               );
             } else {
-              if (data.progress_seconds !== null && data.progress_seconds !== undefined) {
+              if (data.progress_seconds !== null && data.progress_seconds !== undefined && data.progress_seconds !== -1) {
                 columns.push('progress_seconds');
                 values.push(data.progress_seconds);
               }
-              conn.query('INSERT INTO progresoUsuario (' + columns.join(',') + ') VALUES ?',
+              conn.query('INSERT INTO progresousuario (' + columns.join(',') + ') VALUES ?',
                 [[values]],
                 (err, rows) => {
                   if (err) {
@@ -696,11 +696,11 @@ routes.get('/contarTypes/:nombreTable',(req,res)=>{
           }
         );
       } else {
-        if (data.progress_seconds !== null && data.progress_seconds !== undefined) {
+        if (data.progress_seconds !== null && data.progress_seconds !== undefined && data.progress_seconds !== -1) {
           columns.push('progress_seconds');
           values.push(data.progress_seconds);
         }
-        conn.query('INSERT INTO progresoUsuario (' + columns.join(',') + ') VALUES ?',
+        conn.query('INSERT INTO progresousuario (' + columns.join(',') + ') VALUES ?',
           [[values]],
           (err, rows) => {
             if (err) {

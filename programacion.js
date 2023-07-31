@@ -739,6 +739,10 @@ routes.get('/contarTypes/:nombreTable',(req,res)=>{
 
       `, [req.params.IDUSUARIO], (err, rows) => {
         if (err) return res.json(err);
+        if (rows.length === 0) {
+          // Si no hay resultados, devolver un objeto vacío
+          return res.json([]);
+        }
         res.json(rows);
       });
     });

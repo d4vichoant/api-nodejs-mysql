@@ -734,14 +734,13 @@ routes.get('/contarTypes/:nombreTable',(req,res)=>{
       AND (e.ESTADOEJERCICIO IS NULL OR e.ESTADOEJERCICIO = true)
       AND (r.STATUSRUTINA IS NULL OR r.STATUSRUTINA = true)
       AND (ps.STATUSSESION IS NULL OR ps.STATUSSESION = true)
-      GROUP BY pu.IDEJERCICIO, pu.IDSESION, pu.IDRUTINA
+      GROUP BY pu.IDPROGRESOUSUARIO, pu.IDEJERCICIO, pu.IDSESION, pu.IDRUTINA -- Agrega las columnas necesarias aquí
       ORDER BY MAX(pu.progress_dateNow) DESC;
-
       `, [req.params.IDUSUARIO], (err, rows) => {
         if (err) return res.json(err);
         if (rows.length === 0) {
           // Si no hay resultados, devolver un objeto vacío
-          return res.json([]);
+          return res.json({});
         }
         res.json(rows);
       });

@@ -1,18 +1,19 @@
-require('dotenv').config(); 
-const express = require('express');
-const routes = express.Router();
-const fileUpload = require('express-fileupload');
-const jwt = require('jsonwebtoken');
-const secretKey = process.env.SECRET_KEY;
-const cors = require('cors');
-const Jimp = require('jimp');
+  require('dotenv').config(); 
+  const express = require('express');
+  const routes = express.Router();
+  const fileUpload = require('express-fileupload');
+  const jwt = require('jsonwebtoken');
+  const secretKey = process.env.SECRET_KEY;
+  const cors = require('cors');
+  const Jimp = require('jimp');
 
-const fs = require('fs');
-const path = require('path');
-// Middlewares
-routes.use(cors());
-routes.use(fileUpload());
+  const fs = require('fs');
+  const path = require('path');
+  // Middlewares
+  routes.use(cors());
+  routes.use(fileUpload());
 
+const recoverCount = require('./recoverCount');
 
 routes.get('/', (req, res) => {
   req.getConnection((err, conn) => {
@@ -97,6 +98,154 @@ routes.get('/passwordHash/:nickname',(req,res)=>{
       })
   })
 })
+
+routes.post('/getValidateHash/', (req, res) => {
+  req.getConnection((err, conn) => {
+    if (err) return res.json(err);
+    conn.query(`
+      SELECT id, hashNumber, used, date_created, IDPERSONA FROM recovery_hashes 
+      WHERE IDPERSONA=? AND used=0 AND date_created >= NOW() - INTERVAL 5 MINUTE AND hashNumber=?;
+    `, [req.body.IDPERSONA, req.body.hashNumber], (err, rows) => {
+      if (err) return res.json("Usuario No Encontrador");
+        if (rows.length > 0) {
+            conn.query(`
+            UPDATE recovery_hashes
+            SET used = 1
+            WHERE id = ?;
+          `, [rows[0].id], (err, result) => {
+            if (err) return res.json("Error al actualizar el campo 'used'");
+            res.json(true);
+        });
+      } else {
+        res.json(false);
+      }
+    });
+  });
+});
+
+routes.post('/getValidateHashsinIdUsuario/', (req, res) => {
+  req.getConnection((err, conn) => {
+    if (err) return res.json(err);
+    conn.query(`
+      SELECT id, hashNumber, used, date_created FROM recovery_hashes 
+      WHERE used=0 AND date_created >= NOW() - INTERVAL 5 MINUTE AND hashNumber=?;
+    `, [req.body.hashNumber], (err, rows) => {
+      if (err) return res.json("Usuario No Encontrador");
+        if (rows.length > 0) {
+            conn.query(`
+            UPDATE recovery_hashes
+            SET used = 1
+            WHERE id = ?;
+          `, [rows[0].id], (err, result) => {
+            if (err) return res.json("Error al actualizar el campo 'used'");
+            res.json(true);
+        });
+      } else {
+        res.json(false);
+      }
+    });
+  });
+});
+
+routes.post('/recuperarContrasenia', (req, res) => {
+  recoverCount.enviarCorreo(req.body.correoUsuario, req.body.hashValidate)
+    .then((mensaje) => {
+      res.json(mensaje);
+    })
+    .catch((error) => {
+      res.status(500).json('Error al enviar el correo');
+    });
+});
+
+routes.post('/generarHash', async (req, res) => {
+  try {
+    req.getConnection((err, conn) => {
+      if (err) return res.json(err);
+      
+      function generateUniqueHash() {
+        const hash = generateHash();
+        const fiveMinutesAgo = new Date(new Date() - 5 * 60 * 1000);
+        
+        conn.query(`
+          SELECT COUNT(*) as count FROM recovery_hashes WHERE hashNumber = ? AND used = false AND date_created >= ? AND IDPERSONA = ? 
+        `, [hash, fiveMinutesAgo,req.body.IDPERSONA], async (err, rows) => {
+          if (err) return res.json("Error en generar Codigo");
+          
+          if (rows[0].count === 0) {
+            await conn.query(`
+              INSERT INTO recovery_hashes (hashNumber, date_created,IDPERSONA) VALUES (?, ?,?)
+            `, [hash, new Date(),req.body.IDPERSONA]);
+            res.json({ success: true, hash:hash });
+          } else {
+            generateUniqueHash(); // Llamar a la función nuevamente para generar otro hash
+          }
+        });
+      }
+      
+      generateUniqueHash(); // Llamar a la función para comenzar el proceso de generación
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Error al generar el hash único' });
+  }
+});
+
+routes.post('/generarHashSinIDUsuario', async (req, res) => {
+  try {
+    req.getConnection((err, conn) => {
+      if (err) return res.json(err);
+      
+      function generateUniqueHash() {
+        const hash = generateHash();
+        const fiveMinutesAgo = new Date(new Date() - 5 * 60 * 1000);
+        
+        conn.query(`
+          SELECT COUNT(*) as count FROM recovery_hashes WHERE hashNumber = ? AND used = false AND date_created >= ?
+        `, [hash, fiveMinutesAgo], async (err, rows) => {
+          if (err) return res.json("Error en generar Codigo");
+          
+          if (rows[0].count === 0) {
+            await conn.query(`
+              INSERT INTO recovery_hashes (hashNumber, date_created) VALUES (?, ?)
+            `, [hash, new Date()]);
+            res.json({ success: true, hash:hash });
+          } else {
+            generateUniqueHash(); // Llamar a la función nuevamente para generar otro hash
+          }
+        });
+      }
+      
+      generateUniqueHash(); // Llamar a la función para comenzar el proceso de generación
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Error al generar el hash único' });
+  }
+});
+
+
+
+
+function generateHash() {
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  const hashLength = 4;
+  let newHash = '';
+
+  for (let i = 0; i < hashLength; i++) {
+    newHash += characters.charAt(Math.floor(Math.random() * characters.length));
+  }
+
+  return newHash;
+}
+
+routes.get('/getMailUsuario/:usuario',(req,res)=>{
+  req.getConnection((err,conn)=>{
+      if(err) return res.send(err)
+      conn.query('SELECT IDPERSONA, CORREOPERSONA, NICKNAMEPERSONA FROM persona WHERE NICKNAMEPERSONA=? OR CORREOPERSONA=?',[req.params.usuario,req.params.usuario],(err,rows)=>{
+          if(err) return res.json(err)
+          res.json(rows)
+      })
+  })
+})
+
 
 routes.get('/objetivospersonales',(req,res)=>{
   req.getConnection((err,conn)=>{
@@ -1077,7 +1226,7 @@ routes.post('/:nickname', (req, res) => {
       if (err) return res.json(err);
       res.json(rows);
     });
-  });
+  }); 
 });
 
 routes.post('/usuarioFind/:nickname', (req, res) => {
@@ -1085,7 +1234,7 @@ routes.post('/usuarioFind/:nickname', (req, res) => {
   req.getConnection((err, conn) => {
     if (err) return res.send(err);
     conn.query(`
-    SELECT p.IDPERSONA, p.IDGENERO,u.IDUSUARIO, p.IDROLUSUARIO, p.NOMBREPERSONA, p.APELLDOPERSONA, p.CORREOPERSONA, p.NICKNAMEPERSONA, p.IMAGEPERSONA, p.FECHANACIMIENTOPERSONA,  u.IDPROFESION, u.IDFRECUENCIA, u.PESOUSUARIO
+    SELECT p.IDPERSONA, p.IDGENERO,u.IDUSUARIO, p.IDROLUSUARIO, p.NOMBREPERSONA, p.APELLDOPERSONA, p.CORREOPERSONA, p.NICKNAMEPERSONA, p.IMAGEPERSONA, p.FECHANACIMIENTOPERSONA,  u.IDPROFESION, u.IDFRECUENCIA, u.PESOUSUARIO,u.NOTIFICACIONUSUARIO
       FROM persona p
       JOIN usuario u ON p.IDPERSONA = u.IDPERSONA
       WHERE p.NICKNAMEPERSONA = ? AND p.ESTADOPERSONA = true;
